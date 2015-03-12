@@ -109,9 +109,9 @@ Treap *Tr_MakeHeap(Treap *root, Treap *root_parent){
         Tr_MinPriority(root, &min, &key);
         root = Tr_BringToRoot(root, root_parent, key);
         if (root->left != NULL)
-            Tr_MakeHeap(root->left, root);
+            root->left = Tr_MakeHeap(root->left, root);
         if (root->right != NULL)
-            Tr_MakeHeap(root->right, root);
+            root->right = Tr_MakeHeap(root->right, root);
     }
     return root;
 }
@@ -163,9 +163,9 @@ void Tr_Split(Treap *source, Treap **smaller, Treap **larger, int split_point){
 
     // Enforces heap properties
     if (*smaller != NULL)
-        Tr_MakeHeap(*smaller, NULL);
+        *smaller = Tr_MakeHeap(*smaller, NULL);
     if (*larger != NULL)
-        Tr_MakeHeap(*larger, NULL);
+        *larger = Tr_MakeHeap(*larger, NULL);
 }
 
 Treap *Tr_Merge(Treap *a, Treap *b){

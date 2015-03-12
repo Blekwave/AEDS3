@@ -2,7 +2,13 @@ Bibliografia/
 Comunicados/
 Semestres anteriores/
 
+*.sublime-project
+*.sublime-workspace
+
 */build/
+
+*.rar
+*.zip
 
 # Github's C.gitignore
 # https://github.com/github/gitignore/blob/master/C.gitignore
