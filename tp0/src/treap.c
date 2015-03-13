@@ -57,6 +57,7 @@ void Tr_Rotate(Treap *root, Treap *pivot){
  * @return      Address of the new root element.
  */
 Treap *Tr_BringToRoot(Treap *root, Treap *root_parent, int key){
+    // O(log n)
     if (root == NULL || root->key == key)
         return root;
 
@@ -86,6 +87,7 @@ Treap *Tr_BringToRoot(Treap *root, Treap *root_parent, int key){
  *             stored.
  */
 void Tr_MinPriority(Treap *root, int *min, int *key){
+    // O(n)
     if (root->left != NULL)
         Tr_MinPriority(root->left, min, key);
     if (root->right != NULL)
@@ -104,6 +106,7 @@ void Tr_MinPriority(Treap *root, int *min, int *key){
  * @return             Address of the root of the treap after corrections.
  */
 Treap *Tr_MakeHeap(Treap *root, Treap *root_parent){
+    // O(n²)
     if (root != NULL){
         int min = INT_MAX, key = -1;
         Tr_MinPriority(root, &min, &key);
@@ -114,6 +117,40 @@ Treap *Tr_MakeHeap(Treap *root, Treap *root_parent){
             root->right = Tr_MakeHeap(root->right, root);
     }
     return root;
+}
+
+Treap *Tr_MergeInsert(Treap *smaller, Treap *larger, Treap *sm_parent){
+    if (smaller->right == NULL){
+        smaller->right = larger;
+    }
+    else {
+        larger = Tr_MergeInsert(smaller->right, larger, smaller);
+    }
+    Treap *subtree_root = smaller;
+    if (smaller->pri > larger->pri){
+        Tr_Rotate(smaller, larger);
+        if (sm_parent != NULL)
+            sm_parent->right = larger;
+        subtree_root = larger;
+        sm_parent = larger;
+        larger = smaller->right;
+    }
+    while (larger != NULL && smaller->pri > larger->pri){
+        Tr_Rotate(smaller, larger);
+        sm_parent->left = larger;
+        sm_parent = larger;
+        larger = smaller->right;
+    }
+    return subtree_root;
+}
+
+Treap *Tr_Merge(Treap *smaller, Treap *larger){
+    if (smaller == NULL)
+        return larger;
+    if (larger == NULL)
+        return smaller;
+
+    return Tr_MergeInsert(smaller, larger, NULL);
 }
 
 Treap *Tr_SplitSetup(Treap *root, Treap *root_parent, int key){
@@ -166,28 +203,6 @@ void Tr_Split(Treap *source, Treap **smaller, Treap **larger, int split_point){
         *smaller = Tr_MakeHeap(*smaller, NULL);
     if (*larger != NULL)
         *larger = Tr_MakeHeap(*larger, NULL);
-}
-
-Treap *Tr_Merge(Treap *a, Treap *b){
-    if (b != NULL){
-        Treap *next = a, *gap = NULL;
-
-        while (next != NULL){
-            gap = next;
-            next = b->key > next->key ? next->right : next->left;
-        }
-
-        if (gap != NULL){
-            if (b->key > gap->key)
-                gap->right = b;
-            else
-                gap->left = b;
-        } else { // Gap == NULL -> a == NULL
-            a = b;
-        }    
-    }
-
-    return Tr_MakeHeap(a, NULL);
 }
 
 Treap *Tr_Insert(Treap *treap, int key, int pri){
