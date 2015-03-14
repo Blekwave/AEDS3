@@ -31,24 +31,6 @@ void Tr_Delete(Treap *treap){
     Tr_DeleteNode(treap);
 }
 
-/**
- * Performs a tree rotation between a parent and one of its child nodes.
- * @param root  Treap parent node to be rotated.
- * @param pivot Treap child node to be rotated.
- */
-void Tr_Rotate(Treap *root, Treap *pivot){
-    // !!Provide pictures!!
-    // Transfer one of the pivot's children to the root
-    if (root->left == pivot){
-        root->left = pivot->right;
-        pivot->right = root;
-    } else {
-        root->right = pivot->left;
-        pivot->left = root;
-    }
-    // Does not set root's parent's child pointer to pivot!
-}
-
 void Tr_RotateRight(Treap *root, Treap *pivot){
     root->left = pivot->right;
     pivot->right = root;
@@ -127,7 +109,7 @@ Treap *Tr_SplitSetup(Treap *root, Treap *root_parent, int key){
         Tr_RotateRight(root, pivot);
     else
         Tr_RotateLeft(root, pivot);
-    
+
     if (root_parent != NULL){
         if (root_parent->right == root)
             root_parent->right = pivot;
