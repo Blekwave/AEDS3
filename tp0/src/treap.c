@@ -49,74 +49,14 @@ void Tr_Rotate(Treap *root, Treap *pivot){
     // Does not set root's parent's child pointer to pivot!
 }
 
-/**
- * Searches for an element with a certain key and makes it the root element of
- * the Treap through recursive rotations.
- * @param  root Root of the subtree to be replaced.
- * @param  key  Key of the element to be brought to the top.
- * @return      Address of the new root element.
- */
-Treap *Tr_BringToRoot(Treap *root, Treap *root_parent, int key){
-    // O(log n)
-    if (root == NULL || root->key == key)
-        return root;
-
-    Treap *pivot;
-    if (key > root->key)
-        pivot = Tr_BringToRoot(root->right, root, key);
-    else
-        pivot = Tr_BringToRoot(root->left, root, key);
-
-    if (pivot != NULL){
-        Tr_Rotate(root, pivot);
-        if (root_parent != NULL){
-            if (root_parent->right == root)
-                root_parent->right = pivot;
-            else
-                root_parent->left = pivot;
-        }
-    }
-    return pivot;
+void Tr_RotateRight(Treap *root, Treap *pivot){
+    root->left = pivot->right;
+    pivot->right = root;
 }
 
-/**
- * Recursively determines the element with the least priority in the Treap.
- * @param root Root of the treap to be evaluated.
- * @param min  Address to an integer where the minimum priority will be stored.
- * @param key  Address to an integer where the minimum element's key will be
- *             stored.
- */
-void Tr_MinPriority(Treap *root, int *min, int *key){
-    // O(n)
-    if (root->left != NULL)
-        Tr_MinPriority(root->left, min, key);
-    if (root->right != NULL)
-        Tr_MinPriority(root->right, min, key);
-    if (root->pri < *min){
-        *min = root->pri;
-        *key = root->key;
-    }
-}
-
-/**
- * Corrects a Treap's root to make sure it fulfills the heap property: the root
- * must have the least priority of any of its children.
- * @param  root        Root of the treap (or sub-treap).
- * @param  root_parent Parent of the root (or NULL)
- * @return             Address of the root of the treap after corrections.
- */
-Treap *Tr_MakeHeap(Treap *root, Treap *root_parent){
-    // O(n²)
-    if (root != NULL){
-        int min = INT_MAX, key = -1;
-        Tr_MinPriority(root, &min, &key);
-        root = Tr_BringToRoot(root, root_parent, key);
-        if (root->left != NULL)
-            root->left = Tr_MakeHeap(root->left, root);
-        if (root->right != NULL)
-            root->right = Tr_MakeHeap(root->right, root);
-    }
-    return root;
+void Tr_RotateLeft(Treap *root, Treap *pivot){
+    root->right = pivot->left;
+    pivot->left = root;
 }
 
 Treap *Tr_MergeInsert(Treap *smaller, Treap *larger, Treap *sm_parent){
@@ -126,9 +66,12 @@ Treap *Tr_MergeInsert(Treap *smaller, Treap *larger, Treap *sm_parent){
     else {
         larger = Tr_MergeInsert(smaller->right, larger, smaller);
     }
+
     Treap *subtree_root = smaller;
     if (smaller->pri > larger->pri){
-        Tr_Rotate(smaller, larger);
+        // Performs a rotation to correct possible violations of the heap pro-
+        // perty because of the implantation of larger into smaller.
+        Tr_RotateLeft(smaller, larger);
         if (sm_parent != NULL)
             sm_parent->right = larger;
         subtree_root = larger;
@@ -136,7 +79,9 @@ Treap *Tr_MergeInsert(Treap *smaller, Treap *larger, Treap *sm_parent){
         larger = smaller->right;
     }
     while (larger != NULL && smaller->pri > larger->pri){
-        Tr_Rotate(smaller, larger);
+        // Performs further rotations to correct possible violations of the
+        // heap property because of the previous rotation.
+        Tr_RotateLeft(smaller, larger);
         sm_parent->left = larger;
         sm_parent = larger;
         larger = smaller->right;
@@ -144,6 +89,13 @@ Treap *Tr_MergeInsert(Treap *smaller, Treap *larger, Treap *sm_parent){
     return subtree_root;
 }
 
+/**
+ * Merges two Treaps A and B, where the keys of all elements of A are smaller
+ * than the ones in the elements of B.
+ * @param  smaller   Treap with the smaller elements
+ * @param  larger    Treap with the larger elements
+ * @return           Address of the root element of the merged Treaps.
+ */
 Treap *Tr_Merge(Treap *smaller, Treap *larger){
     if (smaller == NULL)
         return larger;
@@ -156,12 +108,10 @@ Treap *Tr_Merge(Treap *smaller, Treap *larger){
 Treap *Tr_SplitSetup(Treap *root, Treap *root_parent, int key){
     if (root == NULL){
         Treap *pivot = Tr_Init(key, AUX_FLAG); // -1 pri flags node as auxiliary
-        if (root_parent != NULL){
-            if (key > root_parent->key)
-                root_parent->right = pivot;
-            else
-                root_parent->left = pivot;
-        }
+        if (key > root_parent->key)
+            root_parent->right = pivot;
+        else
+            root_parent->left = pivot;
         return pivot;
     }
     if (root->key == key)
@@ -173,7 +123,11 @@ Treap *Tr_SplitSetup(Treap *root, Treap *root_parent, int key){
     else
         pivot = Tr_SplitSetup(root->left, root, key);
 
-    Tr_Rotate(root, pivot);
+    if (root->left == pivot)
+        Tr_RotateRight(root, pivot);
+    else
+        Tr_RotateLeft(root, pivot);
+    
     if (root_parent != NULL){
         if (root_parent->right == root)
             root_parent->right = pivot;
@@ -183,26 +137,65 @@ Treap *Tr_SplitSetup(Treap *root, Treap *root_parent, int key){
     return pivot;
 }
 
+Treap *Tr_SplitInsert(Treap *root, Treap *node){
+    if (root == NULL)
+        return node;
+    if (node->key > root->key){
+        if (root->right == NULL){
+            root->right = node;
+            if (root->pri > node->pri){
+                Tr_RotateLeft(root, node);
+                return node;
+            }
+            else
+                return root;
+        }
+        else {
+            Treap *source_next = Tr_SplitInsert(root->right, node);
+            if (source_next == node && root->pri > node->pri){
+                Tr_RotateLeft(root, node);
+                return node;
+            }
+            else
+                return root;
+        }
+    } else {
+        if (root->left == NULL){
+            root->left = node;
+            if (root->pri > node->pri){
+                Tr_RotateRight(root, node);
+                return node;
+            }
+            else
+                return root;
+        }
+        else {
+            Treap *source_next = Tr_SplitInsert(root->left, node);
+            if (source_next == node && root->pri > node->pri){
+                Tr_RotateRight(root, node);
+                return node;
+            }
+            else
+                return root;
+        }
+    }
+}
+
 void Tr_Split(Treap *source, Treap **smaller, Treap **larger, int split_point){
-    source = Tr_SplitSetup(source, NULL, split_point);
-    if (source->pri == AUX_FLAG){
-        // Split point was not the key of an existing element.
-        // An auxiliary node was created to make the process possible.
+    if (source != NULL){
+        source = Tr_SplitSetup(source, NULL, split_point);
         *smaller = source->left;
         *larger = source->right;
-        Tr_DeleteNode(source);
-    } else {
-        // The root of the source tree has split point as its key
-        *smaller = source;
-        *larger = source->right;
-        (*smaller)->right = NULL;
+        if (source->pri == AUX_FLAG){
+            // Split point was not the key of an existing element.
+            // An auxiliary node was created to make the process possible.
+            Tr_DeleteNode(source);
+        } else {
+            // The root of the source tree has split point as its key
+            source->right = source->left = NULL;
+            Tr_SplitInsert(*smaller, source);
+        }
     }
-
-    // Enforces heap properties
-    if (*smaller != NULL)
-        *smaller = Tr_MakeHeap(*smaller, NULL);
-    if (*larger != NULL)
-        *larger = Tr_MakeHeap(*larger, NULL);
 }
 
 Treap *Tr_Insert(Treap *treap, int key, int pri){
