@@ -10,6 +10,12 @@
 // Node and structure initialization //
 ///////////////////////////////////////
 
+/**
+ * Initializes a Treap node with unique values for key and priority.
+ * @param  k Key used for binary search tree sorting rules.
+ * @param  p Priority used for heap sorting rules. 
+ * @return   Address to the new Treap with NULL child pointers.
+ */
 Treap *Tr_Init(int key, int pri){
     Treap *new = malloc(sizeof(Treap));
     new->key = key;
@@ -19,10 +25,18 @@ Treap *Tr_Init(int key, int pri){
     return new;
 }
 
+/**
+ * Frees the memory for a single node.
+ * @param treap Node to be deleted.
+ */
 void Tr_DeleteNode(Treap *treap){
     free(treap);
 }
 
+/**
+ * Recursively deletes a Treap and all its elements.
+ * @param treap Treap to be deleted.
+ */
 void Tr_Delete(Treap *treap){
     if (treap == NULL)
         return;
@@ -31,16 +45,57 @@ void Tr_Delete(Treap *treap){
     Tr_DeleteNode(treap);
 }
 
+///////////////////
+// Tree rotation //
+///////////////////
+
+//////////////////////////////////////////////////////////////////////////////////
+// Brief note about direction nomenclature: there is some controversy about the //
+// meanings of rotating a tree right and left. In this program in particular,   //
+// the direction chosen specifies the direction of the movement of the pivot's  //
+// child element (B in the ASCII art demonstrations).                           //
+//////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Performs a tree rotation to the right.
+ * Example (R = root, P = pivot):
+ * 
+ *       R          P        
+ *      / \        / \       
+ *     P   C  ->  A   R  
+ *    / \            / \     
+ *   A   B          B   C    
+ *
+ * @param root  Root of the tree being rotated.
+ * @param pivot Pivot element being brought up.
+ */
 void Tr_RotateRight(Treap *root, Treap *pivot){
     root->left = pivot->right;
     pivot->right = root;
 }
 
+/**
+ * Performs a tree rotation to the left.
+ * Example (R = root, P = pivot):
+ * 
+ *      R            P
+ *     / \          / \
+ *    A   P   ->   R   C
+ *       / \      / \
+ *      B   C    A   B
+ *
+ * @param root  Root of the tree being rotated.
+ * @param pivot Pivot element being brought up.
+ */
 void Tr_RotateLeft(Treap *root, Treap *pivot){
     root->right = pivot->left;
     pivot->left = root;
 }
 
+/**
+ * Inserts the larger Treap into the smaller Treap and fixes any heap property
+ * violations that may occur.
+ */
 Treap *Tr_MergeInsert(Treap *smaller, Treap *larger, Treap *sm_parent){
     if (smaller->right == NULL){
         smaller->right = larger;
@@ -87,29 +142,42 @@ Treap *Tr_Merge(Treap *smaller, Treap *larger){
     return Tr_MergeInsert(smaller, larger, NULL);
 }
 
-Treap *Tr_SplitSetup(Treap *root, Treap *root_parent, int key){
+
+/**
+ * Sets the Treap up for splitting by placing the element whose key is equal to
+ * the split point at the root of the tree. If such element is non-existant, a
+ * placeholder element is created and brought up.
+ */
+Treap *Tr_SplitSetup(Treap *root, Treap *root_parent, int split_point){
     if (root == NULL){
-        Treap *pivot = Tr_Init(key, AUX_FLAG); // -1 pri flags node as auxiliary
-        if (key > root_parent->key)
+        // Node with split point as key not found.
+        // New placeholder node is created with AUX_FLAG as its priority.
+        // The node is not mistaken for a real node because priority values can
+        // not be negative. (AUX_FLAG == -1)
+        Treap *pivot = Tr_Init(split_point, AUX_FLAG);
+        if (split_point > root_parent->key)
             root_parent->right = pivot;
         else
             root_parent->left = pivot;
         return pivot;
     }
-    if (root->key == key)
+    if (root->key == split_point) // Pivot found!
         return root;
 
     Treap *pivot;
-    if (key > root->key)
-        pivot = Tr_SplitSetup(root->right, root, key);
+    // Attempts to find the pivot recursively through the BST search algorithm
+    if (split_point > root->key)
+        pivot = Tr_SplitSetup(root->right, root, split_point);
     else
-        pivot = Tr_SplitSetup(root->left, root, key);
+        pivot = Tr_SplitSetup(root->left, root, split_point);
 
+    // Rotates the pivot up a level
     if (root->left == pivot)
         Tr_RotateRight(root, pivot);
     else
         Tr_RotateLeft(root, pivot);
 
+    // Fixes the parent node to point to the correct node after rotation
     if (root_parent != NULL){
         if (root_parent->right == root)
             root_parent->right = pivot;
@@ -119,6 +187,14 @@ Treap *Tr_SplitSetup(Treap *root, Treap *root_parent, int key){
     return pivot;
 }
 
+/**
+ * Inserts the pivot of the splitting operation into the smaller or equal Treap.
+ * Fixes any heap property violations by bringing the element up after that un-
+ * til its parent's priority is smaller than its own. 
+ * @param  root Root of the smaller Treap.
+ * @param  node Pivot node of the splitting operation.
+ * @return      Root of the Treap.
+ */
 Treap *Tr_SplitInsert(Treap *root, Treap *node){
     if (root == NULL)
         return node;
@@ -175,7 +251,7 @@ void Tr_Split(Treap *source, Treap **smaller, Treap **larger, int split_point){
         } else {
             // The root of the source tree has split point as its key
             source->right = source->left = NULL;
-            Tr_SplitInsert(*smaller, source);
+            *smaller = Tr_SplitInsert(*smaller, source);
         }
     }
 }
