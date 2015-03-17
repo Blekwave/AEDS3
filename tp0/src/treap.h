@@ -42,12 +42,11 @@ Treap *Tr_Init(int key, int parent);
 void Tr_Delete(Treap *treap);
 
 /**
- * Merges two Treaps into a single Treap. The Treaps supplied for the operation
- * are not necessarily kept unchanged. The smallest element in one of the Treaps
- * must be larger than the largest element in the other Treap.
- * @param  a Treap to be merged.
- * @param  b Treap to be merged.
- * @return   Address of the topmost element of the merged treaps.
+ * Merges two Treaps, as long as one's node with the smallest key has a key
+ * larger than the other Treap's node with the largest key.
+ * @param  smaller Treap with the smaller nodes.
+ * @param  larger  Treap with the larger nodes.
+ * @return         Address of the root of the merged treaps.
  */
 Treap *Tr_Merge(Treap *a, Treap *b);
 
