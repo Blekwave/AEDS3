@@ -34,7 +34,6 @@ Treap *Tr_Insert(Treap *treap, int key, int pri);
 
 Treap *Tr_Remove(Treap *treap, int key);
 
-bool Tr_Locate(Treap *treap, int key, char *directions, int position,
-    int *maxdepth);
+void Tr_Locate(Treap *treap, int key);
 
 #endif

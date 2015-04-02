@@ -7,6 +7,7 @@
 #include "treap.h"
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 /**
  * A treap node, which is equivalent to a size 1 treap. It is used to build
@@ -67,13 +68,13 @@ void Tr_Delete(Treap *treap){
 Treap *Tr_Merge(Treap *smaller, Treap *larger){
     Treap *root = NULL; // Of the merged tree;
     Treap **branch = &root;
-    while (smaller || larger){
-        if (!smaller){
-            *branch = larger;
-            larger = NULL; // Finishes the procedure
-        } else if (!larger) {
-            *branch = smaller;
-            smaller = NULL; // Finishes the procedure+
+    while (1){
+        if (!(smaller && larger)){ // Finishes the procedure
+            if (!smaller)
+                *branch = larger;
+            else
+                *branch = smaller;
+            break;
         } else if (larger->pri < smaller->pri){
             *branch = larger;
             branch = &larger->left;
@@ -129,8 +130,7 @@ void Tr_Split(Treap *source, Treap **smaller, Treap **larger, int split_point){
  * @return       Address of the root of the Treap after insertion.
  */
 Treap *Tr_Insert(Treap *treap, int key, int pri){
-    Treap *new = Tr_Init(key, pri);
-    Treap *smaller = NULL, *larger = NULL;
+    Treap *new = Tr_Init(key, pri), *smaller, *larger;
     Tr_Split(treap, &smaller, &larger, key);
     return Tr_Merge(Tr_Merge(smaller, new), larger);
 }
@@ -142,7 +142,7 @@ Treap *Tr_Insert(Treap *treap, int key, int pri){
  * @return       Address of the root of the Treap after removal.
  */
 Treap *Tr_Remove(Treap *treap, int key){
-    Treap *smaller_eq = NULL, *larger = NULL, *target = NULL, *smaller = NULL;
+    Treap *smaller_eq, *larger, *target, *smaller;
     Tr_Split(treap, &smaller_eq, &larger, key);
     Tr_Split(smaller_eq, &smaller, &target, key - 1);
     Tr_DeleteNode(target);
@@ -156,30 +156,30 @@ Treap *Tr_Remove(Treap *treap, int key){
  * right. -1 is returned in case no such node is found.
  * @param  treap Treap in which the search shall take place.
  * @param  key   Key of the element being searched for.
- * @return       true if the element exists, false if it doesn't. (Used for re-
- *               cursive implementation of the procedure, not relevant to the
- *               end user.)
  */
-bool Tr_Locate(Treap *treap, int key, char *directions, int position,
-    int *maxdepth){
-    if (treap == NULL){
-        return false;
+
+void Tr_Locate(Treap *treap, int key){
+    Treap *p = treap;
+    // First pass to figure out if the node exists
+    while (p && p->key != key)
+        if (key > p->key)
+            p = p->right;
+        else
+            p = p->left;
+    if (!p)
+        printf("-1"); // Doesn't exist
+    else {
+        // Exists; second pass to print directions
+        p = treap;
+        while (p->key != key)
+            if (key > p->key){
+                p = p->right;
+                printf("R");
+            } else {
+                p = p->left;
+                printf("L");
+            }
     }
-    if (treap->key == key){
-        *maxdepth = position;
-        return true;
-    }
-    if (key > treap->key){
-        if (Tr_Locate(treap->right, key, directions, position + 1, maxdepth)){
-            directions[position] = 'R';
-            return true;
-        }
-    } else {
-        if (Tr_Locate(treap->left, key, directions, position + 1, maxdepth)){
-            directions[position] = 'L';
-            return true;
-        }
-    }
-    return false;
+    printf("\n");
 }
 

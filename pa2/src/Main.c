@@ -1,8 +1,27 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #define STR_SIZE 105 // Actually 50, but forum posts say it's safer this way
                      // http://www.urionlinejudge.com.br/forum/viewtopic.php?f=4&t=239
+
+int bmhs(char *text, int len_t, char *pattern, int len_p){
+    int i, j;
+
+    // Builds offset table
+    char offset[CHAR_MAX + 1];
+
+    for (i = 0; i <= CHAR_MAX; i++)
+        offset[i] = len_p;
+
+    for (i = 0; i < len_p; i++)
+        offset[pattern[i]] = len_p - i;
+
+    int probe = len_p;
+
+    free(offset);
+}
 
 int largest_substr(char *a, char *b){
     int len_a = strlen(a), len_b = strlen(b), max = 0, i, j;

@@ -5,7 +5,7 @@ Semestres anteriores/
 *.sublime-project
 *.sublime-workspace
 
-*/build/
+*/*build/
 
 *.rar
 *.zip
@@ -42,3 +42,5 @@ Semestres anteriores/
 *.i*86
 *.x86_64
 *.hex
+
+*/__pycache__/

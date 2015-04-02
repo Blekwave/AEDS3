@@ -27,14 +27,7 @@ int main(int argc, char const *argv[]){
         }
         else if (!strcmp(pch, "LOCATE")){
             key = atoi(pch = strtok(NULL, " "));
-            char directions[BUFFER_SIZE];
-            int depth = -1;
-            if (Tr_Locate(treap, key, directions, 0, &depth)){
-                directions[depth] = '\0';
-                printf("%s\n", directions);
-            }
-            else
-                printf("-1\n");
+            Tr_Locate(treap, key);
         }
         else {
             fprintf(stderr, "%s is not a valid command.\n", pch);
