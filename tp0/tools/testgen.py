@@ -14,4 +14,4 @@ for i in range(0,num_nodes):
 random.shuffle(keys)
 
 for i in range(0,num_nodes):
-    print("REMOVE", keys[i], i)
+    print("REMOVE", keys[i])

@@ -22,7 +22,7 @@ typedef struct struct_treap {
     struct struct_treap *right;
 } Treap;
 
-Treap *Tr_Init(int key, int parent);
+Treap *Tr_Init(int key, int pri);
 
 void Tr_Delete(Treap *treap);
 

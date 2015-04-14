@@ -115,9 +115,10 @@ void Tr_Split(Treap *source, Treap **smaller, Treap **larger, int split_point){
         }
     }
     *s_branch = source;
-    if (source)
+    if (source){
         *l_branch = source->right;
-    else
+        source->right = NULL;
+    } else
         *l_branch = NULL;
 }
 
@@ -130,8 +131,15 @@ void Tr_Split(Treap *source, Treap **smaller, Treap **larger, int split_point){
  * @return       Address of the root of the Treap after insertion.
  */
 Treap *Tr_Insert(Treap *treap, int key, int pri){
-    Treap *new = Tr_Init(key, pri), *smaller, *larger;
+    Treap *new, *smaller, *larger;
     Tr_Split(treap, &smaller, &larger, key);
+    Treap *p = smaller;
+    while (p && p->key != key)
+        p = p->right;
+    if (p)
+        new = NULL;
+    else
+        new = Tr_Init(key, pri);
     return Tr_Merge(Tr_Merge(smaller, new), larger);
 }
 
