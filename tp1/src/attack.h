@@ -5,7 +5,8 @@ typedef struct {
     int panzers;
     int x;
     int y;
-    float distance;
 } Attack;
+
+int attackCompar(const void *a, const void *b);
 
 #endif

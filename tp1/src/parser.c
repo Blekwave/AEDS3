@@ -14,10 +14,10 @@ void resetFSM(Attack *a, char *state){
     *state = 0;
 }
 
-void parseData(char *addr, int base_x, int base_y){
+size_t parseData(char *addr){
     FILE *out = fopen(addr, "wb");
     char c, state = 0;
-    Attack a = {1, 0, 0, 0};
+    Attack a = {1, 0, 0};
     while ((c = getchar()) != EOF){
         if (state < 6){ // Initial po+int statement
             if ((c == 'p' && state == 0) ||
@@ -34,14 +34,12 @@ void parseData(char *addr, int base_x, int base_y){
             if (c >= '0' && c <= '9'){
                 if (state < 8){
                     state = 7;
-                    a.x *= 10;
-                    a.x += c - DIGIT_OFFSET;
+                    a.x = (a.x << 3) + (a.x << 1) + c - DIGIT_OFFSET; // * 10 + char
                     if (a.x >= 100000)
                         resetFSM(&a, &state);
                 } else {
                     state = 9;
-                    a.y *= 10;
-                    a.y += c - DIGIT_OFFSET;
+                    a.y = (a.y << 3) + (a.y << 1) + c - DIGIT_OFFSET; // * 10 + char
                     if (a.y >= 100000)
                         resetFSM(&a, &state);
                 }
@@ -55,8 +53,6 @@ void parseData(char *addr, int base_x, int base_y){
                 }
             }
             else if (c == ')' && state == 9){ // Done and valid, output to file
-                int dx = a.x - base_x, dy = a.y - base_y;
-                a.distance = sqrt(dx * dx + dy * dy);
                 fwrite(&a, sizeof(Attack), 1, out);
                 resetFSM(&a, &state);
             }
@@ -65,7 +61,9 @@ void parseData(char *addr, int base_x, int base_y){
             }
         }
     }
+    size_t size = ftell(out);
     fclose(out);
+    return size;
 }
 
 void unpackData(char *addr){
