@@ -3,11 +3,12 @@ include_directories(${TP1_SOURCE_DIR}/src)
 add_library(parser parser.c)
 add_library(sorting sorting.c)
 add_library(attack attack.c)
+add_library(msort msort.c)
 
 add_executable(TP1 main.c)
 add_executable(unpacker unpacker.c)
 
-target_link_libraries(TP1 parser sorting attack)
+target_link_libraries(TP1 parser sorting attack msort)
 target_link_libraries(unpacker parser)
 
 

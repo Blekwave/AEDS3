@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "attack.h"
 #include "sorting.h"
+#include "msort.h"
 
 #define FILENAME_BFSIZE 128
 
@@ -78,10 +79,11 @@ void sortAttackList(char *addr, size_t filesize, size_t available_mem,
     int cur_wr_file = 0;
     while ((items_read = fread(cache, sizeof(Attack), items_in_block,
             input))){
-        qsort(cache, items_read, sizeof(Attack), attackCompar);
+        msort(cache, items_read, sizeof(Attack), attackCompar);
         fwrite(cache, sizeof(Attack), items_read, write_files[cur_wr_file]);
         cur_wr_file = (cur_wr_file + 1) % ways;
     }
+    
     fclose(input);
 
     closeWriteFiles(write_files, ways);
