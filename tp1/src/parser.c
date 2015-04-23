@@ -14,7 +14,7 @@ void resetFSM(Attack *a, char *state){
     *state = 0;
 }
 
-size_t parseData(char *addr){
+size_t parseData(const char *addr){
     FILE *out = fopen(addr, "wb");
     char c, state = 0;
     Attack a = {1, 0, 0};
@@ -66,7 +66,7 @@ size_t parseData(char *addr){
     return size;
 }
 
-void unpackData(char *addr){
+void unpackData(const char *addr){
     FILE *in = fopen(addr, "rb");
     Attack a;
     while (fread(&a, sizeof(Attack), 1, in))

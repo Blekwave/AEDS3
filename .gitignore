@@ -44,3 +44,7 @@ Semestres anteriores/
 *.hex
 
 */__pycache__/
+tp0/tools/miniteste.i
+tp0/tools/satanas_ficaria_satisfeito.i
+tp0/tools/teste_imenso.i
+tp0/tools/teste_muito_grande.i

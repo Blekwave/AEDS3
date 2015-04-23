@@ -54,7 +54,7 @@ int getMaxIndex(Attack *cache, int ways){
     int max_pos;
     max_pos = --ways;
     while (ways--)
-        if (attackCompar(&cache[ways], &cache[max_pos]) > 0)
+        if (attackCompar(&cache[max_pos], &cache[ways]) > 0)
             max_pos = ways;
     return max_pos;
 }
@@ -62,9 +62,10 @@ int getMaxIndex(Attack *cache, int ways){
 void sortAttackList(char *addr, size_t filesize, size_t available_mem,
     int ways){
     int items_in_block = available_mem / sizeof(Attack);
+    int cache_length = items_in_block;
     int items_in_file = filesize / sizeof(Attack);
 
-    Attack *cache = malloc(items_in_block * sizeof(Attack));
+    Attack *cache = malloc(cache_length * sizeof(Attack));
     FILE **read_files = malloc(sizeof(FILE *) * ways);
     FILE **write_files = malloc(sizeof(FILE *) * ways);
 
@@ -131,9 +132,9 @@ void sortAttackList(char *addr, size_t filesize, size_t available_mem,
     }
 
     FILE *output = fopen(addr, "wb");
-    while ((items_read = fread(cache, sizeof(Attack), items_in_file,
+    while ((items_read = fread(cache, sizeof(Attack), cache_length,
             read_files[0]))){
-        fwrite(cache, items_read, sizeof(Attack), output);
+        fwrite(cache, sizeof(Attack), items_read, output);
     }
     fclose(output);
 

@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-size_t parseData(char *addr);
-void unpackData(char *addr);
+size_t parseData(const char *addr);
+void unpackData(const char *addr);
 
 #endif

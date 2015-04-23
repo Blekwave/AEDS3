@@ -5,7 +5,9 @@ add_library(sorting sorting.c)
 add_library(attack attack.c)
 
 add_executable(TP1 main.c)
+add_executable(unpacker unpacker.c)
 
 target_link_libraries(TP1 parser sorting attack)
+target_link_libraries(unpacker parser)
 
 
