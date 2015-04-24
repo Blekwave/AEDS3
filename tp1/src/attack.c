@@ -1,16 +1,16 @@
 #include "attack.h"
 #include "extern.h"
 
-#define DeltaAX ((Attack *)a)->x - base_x
-#define DeltaAY ((Attack *)a)->y - base_y
-#define DeltaBX ((Attack *)b)->x - base_x
-#define DeltaBY ((Attack *)b)->y - base_y
+#define sqr(X) ((X) * (X))
+#define AtX(X) (((Attack *)(X))->x)
+#define AtY(X) (((Attack *)(X))->y)
 
+#include <stdio.h>
 
-int attackCompar(const void *b, const void *a){
+int attackCompar(const void *a, const void *b){
     int t;
     return
-        (t = ((Attack *)a)->panzers - ((Attack *)b)->panzers) ? t :
-        (DeltaAX * DeltaAX + DeltaAY * DeltaAY)
-        - (DeltaBX * DeltaBX + DeltaBY * DeltaBY);
+        (t = ((Attack *)b)->panzers - ((Attack *)a)->panzers) ? t :
+        (sqr(AtX(a) - base_x) + sqr(AtY(a) - base_y))
+        - (sqr(AtX(b) - base_x) + sqr(AtY(b) - base_y));
 }

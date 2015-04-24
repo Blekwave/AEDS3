@@ -1,4 +1,5 @@
 documentação/
 xbuild/
+tb/
 *.sublime-project
 *.sublime-workspace
