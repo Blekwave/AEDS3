@@ -14,6 +14,26 @@ void resetFSM(Attack *a, char *state){
     *state = 0;
 }
 
+// FSM State reference
+// (I should really make this into an enum or at least a bunch of defines)
+// 
+// PHASE 1
+// 0: Initial state
+// 1: read 'p'
+// 2: read 'po+', can accept more 'o's for extra panzers
+// 3: read 'po+i'
+// 4: read 'po+in'
+// 5: read 'po+int'
+// 
+// PHASE 2: reading '(', more than a single ',' or a value that exceeds 99999
+//          will reset to state zero.
+// 6: read 'po+int(', reading ',' will reset to zero
+// 7: read 'po+int([0-9]+'
+// 8: read 'po+int([0-9]+,'
+// 9: read 'po+int([0-9]+,[0-9]+'
+// '10': read 'po+int([0-9]+,[0-9]+)' (resets to zero and saves coordinates)
+// 
+
 size_t parseData(const char *addr){
     FILE *out = fopen(addr, "wb");
     char c, state = 0;
@@ -52,7 +72,7 @@ size_t parseData(const char *addr){
                     resetFSM(&a, &state);
                 }
             }
-            else if (c == ')' && state == 9){ // Done and valid, output to file
+            else if (c == ')'){ // Done and valid, output to file
                 fwrite(&a, sizeof(Attack), 1, out);
                 resetFSM(&a, &state);
             }

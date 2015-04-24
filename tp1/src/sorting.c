@@ -52,21 +52,38 @@ void closeWriteFiles(FILE **write_files, int ways){
 }
 
 int getMaxIndex(Attack *cache, int ways){
-    int max_pos;
-    max_pos = --ways;
-    while (ways--)
-        if (attackCompar(&cache[max_pos], &cache[ways]) > 0)
-            max_pos = ways;
+    int max_pos = 0, i;
+    for (i = 1; i < ways; i++)
+        if (attackCompar(&cache[max_pos], &cache[i]) > 0)
+            max_pos = i;
     return max_pos;
+}
+
+void loadSortAndSave(char *addr, size_t filesize){
+    Attack *cache = malloc(filesize);
+    FILE *input = fopen(addr, "rb");
+    int items_read = fread(cache, sizeof(Attack), filesize / sizeof(Attack),
+                           input);
+    fclose(input);
+    msort(cache, items_read, sizeof(Attack), attackCompar);
+    FILE *output = fopen(addr, "wb");
+    fwrite(cache, items_read, sizeof(Attack), output);
+    fclose(output);
 }
 
 void sortAttackList(char *addr, size_t filesize, size_t available_mem,
     int ways){
+    if (filesize <= available_mem){
+        loadSortAndSave(addr, filesize);
+        return;
+    }
+
     int items_in_block = available_mem / sizeof(Attack);
     int cache_length = items_in_block;
     int items_in_file = filesize / sizeof(Attack);
 
     Attack *cache = malloc(cache_length * sizeof(Attack));
+    
     FILE **read_files = malloc(sizeof(FILE *) * ways);
     FILE **write_files = malloc(sizeof(FILE *) * ways);
 
