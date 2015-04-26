@@ -39,7 +39,7 @@ size_t parseData(const char *addr){
     char c, state = 0;
     Attack a = {1, 0, 0};
     while ((c = getchar()) != EOF){
-        if (state < 6){ // Initial po+int statement
+        if (state < 6){ // PHASE 1
             if ((c == 'p' && state == 0) ||
                 (c == 'o' && state == 1) ||
                 (c == 'i' && state == 2) ||
@@ -50,7 +50,7 @@ size_t parseData(const char *addr){
             else if (c == 'o' && (state == 2)){
                 a.panzers++;
             }
-        } else if (state < 10) { // Getting coordinates
+        } else { // PHASE 2
             if (c >= '0' && c <= '9'){
                 if (state < 8){
                     state = 7;
@@ -72,7 +72,7 @@ size_t parseData(const char *addr){
                     resetFSM(&a, &state);
                 }
             }
-            else if (c == ')'){ // Done and valid, output to file
+            else if (c == ')' && state == 9){ // Done and valid, output to file
                 fwrite(&a, sizeof(Attack), 1, out);
                 resetFSM(&a, &state);
             }

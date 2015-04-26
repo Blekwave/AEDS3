@@ -7,8 +7,8 @@
 #include "msort.h"
 
 #define FILENAME_BFSIZE 128
-
 #define DONE_WITH_WAY_FLAG -1
+
 
 static char pref_write = 'a';
 static char pref_read = 'b';

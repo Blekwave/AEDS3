@@ -7,10 +7,10 @@
 
 #include <stdio.h>
 
-int attackCompar(const void *a, const void *b){
+long long attackCompar(const void *a, const void *b){
     int t;
     return
         (t = ((Attack *)b)->panzers - ((Attack *)a)->panzers) ? t :
-        (sqr(AtX(a) - base_x) + sqr(AtY(a) - base_y))
-        - (sqr(AtX(b) - base_x) + sqr(AtY(b) - base_y));
+        (sqr((long long)AtX(a) - base_x) + sqr((long long)AtY(a) - base_y))
+        - (sqr((long long)AtX(b) - base_x) + sqr((long long)AtY(b) - base_y));
 }

@@ -17,7 +17,7 @@
  *                                 r > 0: a should be placed after b
  */
 void msort(void *base, size_t num, size_t size,
-           int (*compar)(const void *a, const void *b)){
+           long long (*compar)(const void *a, const void *b)){
     // An auxiliary array with equal size to the input array is used to store
     // the output.
     void *aux_array = malloc(size * num);
