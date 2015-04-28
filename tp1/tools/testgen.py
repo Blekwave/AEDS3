@@ -25,7 +25,7 @@ def add_open_parens(p2_str):
     index = randint(0, len(p2_str) - 1)
     return p2_str[:index] + "("
 
-
+        
 def valid_noise_charsets():
     p1_charsets = [list(string.printable), list(string.printable),
                    list(string.printable), list(string.printable),

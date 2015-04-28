@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
-#include <stdbool.h>
 #include "attack.h"
 #include "sorting.h"
 #include "msort.h"
@@ -71,6 +70,44 @@ void loadSortAndSave(char *addr, size_t filesize){
     fclose(output);
 }
 
+static int mergePass(FILE **read_files, FILE *write_file, Attack *cache,
+    int ways, int *way_pos, int items_in_block){
+    int ways_done = 0, items_written = 0;
+    int i;
+    // Read first element of each block in column to cache
+    for (i = 0; i < ways; i++){
+        if (!fread(&cache[i], sizeof(Attack), 1, read_files[i])){
+            way_pos[i] = items_in_block;
+            cache[i].panzers = DONE_WITH_WAY_FLAG;
+            ways_done++;
+        } else {
+            way_pos[i] = 0;
+        }
+    }
+    while (ways_done < ways){
+        int max_pos = getMaxIndex(cache, ways);
+        // Write item in max priority way to current write file
+        fwrite(&cache[max_pos], sizeof(Attack), 1,
+               write_file);
+        items_written++;
+        // Increment count of items read from each way
+        way_pos[max_pos]++;
+        if (way_pos[max_pos] < items_in_block){
+            if (!fread(&cache[max_pos], sizeof(Attack), 1,
+                read_files[max_pos])){
+                way_pos[max_pos] = items_in_block;
+                cache[max_pos].panzers = DONE_WITH_WAY_FLAG;
+                ways_done++;
+            }
+        }
+        else {
+            cache[max_pos].panzers = DONE_WITH_WAY_FLAG;
+            ways_done++;
+        }
+    }
+    return items_written;
+}
+
 void sortAttackList(char *addr, size_t filesize, size_t available_mem,
     int ways){
     if (filesize <= available_mem){
@@ -106,45 +143,14 @@ void sortAttackList(char *addr, size_t filesize, size_t available_mem,
     closeWriteFiles(write_files, ways);
     openAllFiles(read_files, write_files, ways);
 
-    int *items_read_in_way = malloc(sizeof(int) * ways);
+    int *way_pos = malloc(sizeof(int) * ways);
     cur_wr_file = 0;
 
     while (items_in_block < items_in_file){
-        int items_written_in_pass = 0;
-        while (items_written_in_pass < items_in_file){            
-            int finished_ways = 0;
-            int i;
-            for (i = 0; i < ways; i++){ // Read first element of each block in column to cache
-                if (!fread(&cache[i], sizeof(Attack), 1, read_files[i])){
-                    items_read_in_way[i] = items_in_block;
-                    cache[i].panzers = DONE_WITH_WAY_FLAG;
-                    finished_ways++;
-                } else {
-                    items_read_in_way[i] = 0;
-                }
-            }
-            while (finished_ways < ways){
-                int max_pos = getMaxIndex(cache, ways);
-                // Write item in max priority way to current write file
-                fwrite(&cache[max_pos], sizeof(Attack), 1,
-                       write_files[cur_wr_file]);
-                items_written_in_pass++;
-
-                // Increment count of items read from each way
-                items_read_in_way[max_pos]++;
-                if (items_read_in_way[max_pos] < items_in_block){
-                    if (!fread(&cache[max_pos], sizeof(Attack), 1,
-                        read_files[max_pos])){
-                        items_read_in_way[max_pos] = items_in_block;
-                        cache[max_pos].panzers = DONE_WITH_WAY_FLAG;
-                        finished_ways++;
-                    }
-                }
-                else {
-                    cache[max_pos].panzers = DONE_WITH_WAY_FLAG;
-                    finished_ways++;
-                }
-            }
+        int items_written = 0;
+        while (items_written < items_in_file){            
+            items_written += mergePass(read_files, write_files[cur_wr_file],
+                                       cache, ways, way_pos, items_in_block);
             cur_wr_file = (cur_wr_file + 1) % ways;
         }
         items_in_block *= ways;
@@ -166,5 +172,5 @@ void sortAttackList(char *addr, size_t filesize, size_t available_mem,
     free(cache);
     free(read_files);
     free(write_files);
-    free(items_read_in_way);
+    free(way_pos);
 }
