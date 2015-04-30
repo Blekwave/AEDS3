@@ -19,7 +19,7 @@ typedef struct {
 } WrapperBare;
 
 long long wrapperCompar(const void *a, const void *b){
-    int t;
+    long long t;
     return (t = ((Wrapper *)a)->flag - ((Wrapper *)b)->flag) ? t :
            (t = attackCompar(a, b)) ? t :
            (((Wrapper *)a)->ins - ((Wrapper *)b)->ins);
@@ -86,7 +86,6 @@ int initialPass(char *addr, FILE **write_files, size_t available_mem, int ways){
     Wrapper w_cache;
 
     int heap_len = available_mem / sizeof(Wrapper);
-    //heap_len = 2;
     Heap *h = hInit(sizeof(Wrapper), heap_len, wrapperCompar);
     int ins = 0;
     FILE *input = fopen(addr, "rb");
@@ -103,10 +102,10 @@ int initialPass(char *addr, FILE **write_files, size_t available_mem, int ways){
     // Reads remaining elements
     while (fread(&r_cache, sizeof(Attack), 1, input)){
         hPop(h, &w_cache);
-        // printf("Inserting %d: %d,%d in %d\n", w_cache.a.panzers, w_cache.a.x, w_cache.a.y, w_cache.flag);
         fwrite(&w_cache, sizeof(WrapperBare), 1, write_files[w_cache.flag % ways]);
-        if (attackCompar(&r_cache, &w_cache) < 0)
+        if (attackCompar(&r_cache, &w_cache.a) < 0){
             w_cache.flag++; // Next block.
+        }
         w_cache.a = r_cache;
         w_cache.ins = ins;
         hInsert(h, &w_cache);
