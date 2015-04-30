@@ -33,8 +33,10 @@ long long attackOCompar(const void *a, const void *b){
 void closeAllFiles(FILE **read_files, FILE **write_files, int ways){
     int i;
     for (i = 0; i < ways; i++){
-        fclose(read_files[i]);
-        fclose(write_files[i]);
+        if (read_files[i])
+            fclose(read_files[i]);
+        if (write_files[i])
+            fclose(write_files[i]);
     }
 }
 
@@ -178,8 +180,8 @@ void saveToAddr(char *addr, char *w_prefix, size_t available_mem, int ways){
 
 void sortAttackList(char *addr, size_t filesize, size_t available_mem,
     int ways, char *r_prefix, char *w_prefix){
-    FILE **read_files = malloc(sizeof(FILE *) * ways);
-    FILE **write_files = malloc(sizeof(FILE *) * ways);
+    FILE **read_files = calloc(sizeof(FILE *), ways);
+    FILE **write_files = calloc(sizeof(FILE *), ways);
 
     openAllFiles(read_files, r_prefix, write_files, w_prefix, ways);
     int blocks = initialPass(addr, write_files, available_mem, ways);
