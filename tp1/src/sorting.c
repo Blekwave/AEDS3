@@ -15,14 +15,14 @@ typedef struct {
 typedef struct {
     Attack a;
     int flag;
-    unsigned int ins;
+    int ins;
 } SelWrapperO;
 
 long long selWrapperOCompar(const void *a, const void *b){
     int t;
     return (t = ((SelWrapper *)a)->flag - ((SelWrapper *)b)->flag) ? t :
            (t = attackCompar(a, b)) ? t :
-                ((long long)((SelWrapperO *)a)->ins - ((SelWrapperO *)b)->ins);
+                (((SelWrapperO *)a)->ins - ((SelWrapperO *)b)->ins);
 }
 
 long long attackOCompar(const void *a, const void *b){
@@ -84,7 +84,7 @@ int initialPass(char *addr, FILE **write_files, size_t available_mem, int ways){
 
     int heap_len = available_mem / sizeof(SelWrapper);
     Heap *h = hInit(sizeof(SelWrapperO), heap_len, selWrapperOCompar);
-    unsigned int ins = 0;
+    int ins = 0;
     FILE *input = fopen(addr, "rb");
 
     // Fills the heap with the first elements of the file
@@ -122,7 +122,7 @@ void additionalPass(FILE **read_files, FILE **write_files, int ways){
     SelWrapperO r_cache, w_cache;
     Heap *h = hInit(sizeof(SelWrapperO), ways, attackOCompar);
     Heap *next = hInit(sizeof(SelWrapperO), ways, attackOCompar);
-    unsigned int ins = 0;
+    int ins = 0;
 
     int i;
     for (i = 0; i < ways; i++){
@@ -135,7 +135,7 @@ void additionalPass(FILE **read_files, FILE **write_files, int ways){
     }
 
     int cur_file = 0;
-    unsigned int ins_next = 0;
+    int ins_next = 0;
     while (hNum(h)){
         while (hNum(h)){
             hPop(h, &w_cache);
