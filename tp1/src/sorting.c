@@ -80,12 +80,13 @@ void openAllFiles(FILE **read_files, char *r_prefix,
  * File 2: Blocks 2, 5
  * This fact is useful for better comprehension of additionalPass().
  */
-int initialPass(char *addr, FILE **write_files, size_t available_mem, int ways){
+int initialPass(char *addr, FILE **write_files, int available_mem, int ways){
     // Initial pass
     Attack r_cache;
     Wrapper w_cache;
 
-    int heap_len = available_mem / sizeof(Wrapper);
+    unsigned long long heap_len =
+        (((unsigned long long)available_mem) << 20) / sizeof(Wrapper);
     Heap *h = hInit(sizeof(Wrapper), heap_len, wrapperCompar);
     int ins = 0;
     FILE *input = fopen(addr, "rb");
@@ -170,7 +171,7 @@ int additionalPass(FILE **read_files, FILE **write_files, int ways){
     return cur_file;
 }
 
-void saveToAddr(char *addr, char *w_prefix, size_t available_mem, int ways){
+void saveToAddr(char *addr, char *w_prefix, int ways){
     char filename_buffer[FILENAME_BFSIZE];
     sprintf(filename_buffer, "%s%04d.tmp", w_prefix, 0);
     FILE *input = fopen(filename_buffer, "rb");
@@ -183,7 +184,7 @@ void saveToAddr(char *addr, char *w_prefix, size_t available_mem, int ways){
     fclose(output);
 }
 
-void sortAttackList(char *addr, size_t filesize, size_t available_mem,
+void sortAttackList(char *addr, size_t filesize, int available_mem,
     int ways, char *r_prefix, char *w_prefix){
     FILE **read_files = calloc(sizeof(FILE *), ways);
     FILE **write_files = calloc(sizeof(FILE *), ways);
@@ -199,7 +200,7 @@ void sortAttackList(char *addr, size_t filesize, size_t available_mem,
         closeAllFiles(read_files, write_files, ways);
     }
 
-    saveToAddr(addr, w_prefix, available_mem, ways);
+    saveToAddr(addr, w_prefix, ways);
 
     free(read_files);
     free(write_files);

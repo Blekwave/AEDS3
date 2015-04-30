@@ -9,7 +9,7 @@
 #define rch(H,X) (index((H), 2 * (X) + 1))
 #define parent(H,X) (index((H), (X) / 2))
 
-Heap *hInit(size_t size, int len,
+Heap *hInit(unsigned int size, unsigned long long len,
             long long (*compar)(const void *a, const void *b)){
     Heap *new = malloc(sizeof(Heap));
     new->size = size;

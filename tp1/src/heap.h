@@ -4,14 +4,14 @@
 #include <string.h>
 
 typedef struct {
-    size_t size;
+    unsigned int size;
     long long (*compar)(const void *a, const void *b);
-    int len;
-    int num;
+    unsigned long long len;
+    unsigned long long num;
     void *root;
 } Heap;
 
-Heap *hInit(size_t size, int max,
+Heap *hInit(unsigned int size, unsigned long long max,
             long long (*compar)(const void *a, const void *b));
 
 void hInsert(Heap *h, void *data);
