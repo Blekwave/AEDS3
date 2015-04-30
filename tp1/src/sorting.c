@@ -1,29 +1,36 @@
+#include <malloc.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
+#include <assert.h>
 #include "attack.h"
+#include "heap.h"
 #include "sorting.h"
-#include "msort.h"
 
+#define SWAP(x, y) do { __typeof__(x) SWAP = x; x = y; y = SWAP; } while (0)
 #define FILENAME_BFSIZE 128
-#define DONE_WITH_WAY_FLAG -1
 
+typedef struct {
+    Attack a;
+    int flag;
+} SelWrapper;
 
-static char pref_write = 'a';
-static char pref_read = 'b';
+typedef struct {
+    Attack a;
+    int flag;
+    unsigned int ins;
+} SelWrapperO;
 
-void openAllFiles(FILE **read_files, FILE **write_files, int ways){
-    char temp = pref_write;
-    pref_write = pref_read;
-    pref_read = temp;
-    char buffer[FILENAME_BFSIZE];
-    int i;
-    for (i = 0; i < ways; i++){
-        sprintf(buffer, "%c%03d.temp", pref_read, i);
-        read_files[i] = fopen(buffer, "rb");
-        buffer[0] = pref_write;
-        write_files[i] = fopen(buffer, "wb");
-    }
+long long selWrapperOCompar(const void *a, const void *b){
+    int t;
+    return (t = ((SelWrapper *)a)->flag - ((SelWrapper *)b)->flag) ? t :
+           (t = attackCompar(a, b)) ? t :
+                ((long long)((SelWrapperO *)a)->ins - ((SelWrapperO *)b)->ins);
+}
+
+long long attackOCompar(const void *a, const void *b){
+    int t;
+    return (t = attackCompar(a, b)) ? t : ((long long)((SelWrapperO *)a)->ins - ((SelWrapperO *)b)->ins);
 }
 
 void closeAllFiles(FILE **read_files, FILE **write_files, int ways){
@@ -34,143 +41,165 @@ void closeAllFiles(FILE **read_files, FILE **write_files, int ways){
     }
 }
 
-void openWriteFiles(FILE **write_files, int ways){
+void openAllFiles(FILE **read_files, char *r_prefix,
+                   FILE **write_files, char *w_prefix, int ways){
+    int i, prefix_len;
     char buffer[FILENAME_BFSIZE];
-    int i;
+    sprintf(buffer, "%s", r_prefix);
+    prefix_len = strlen(r_prefix);
     for (i = 0; i < ways; i++){
-        sprintf(buffer, "%c%03d.temp", pref_write, i);
+        sprintf(buffer + prefix_len, "%04d.tmp", i);
+        read_files[i] = fopen(buffer, "rb");
+    }
+    sprintf(buffer, "%s", w_prefix);
+    prefix_len = strlen(w_prefix);
+    for (i = 0; i < ways; i++){
+        sprintf(buffer + prefix_len, "%04d.tmp", i);
         write_files[i] = fopen(buffer, "wb");
     }
 }
 
-void closeWriteFiles(FILE **write_files, int ways){
-    int i;
-    for (i = 0; i < ways; i++){
-        fclose(write_files[i]);
-    }
-}
+/**
+ * Reads the attacks from a file and splits them into sorted blocks, which are,
+ * then, put into files together with information about which block they belong
+ * to.
+ * @param  addr        String containing the address of the input file.
+ * @param  write_files Array of open files in which the blocks shall be written.
+ * @param  ways        Number of ways of the sorting procedure.
+ * @return             Number of blocks generated.
+ *
+ * Information about the data in the new temporary files:
+ * Each block of attacks contains selWrappers, which wrap the attacks themselves
+ * and the identifier of the block they're in. Due to the fact that the blocks
+ * are written sequentially to the files, this means that all blocks in the file
+ * with index I have id I mod WAYS. e.g. (3 ways):
+ * File 0: Blocks 0, 3, 6
+ * File 1: Blocks 1, 4
+ * File 2: Blocks 2, 5
+ * This fact is useful for better comprehension of additionalPass().
+ */
+int initialPass(char *addr, FILE **write_files, size_t available_mem, int ways){
+    // Initial pass
+    Attack r_cache;
+    SelWrapperO w_cache;
 
-int getMaxIndex(Attack *cache, int ways){
-    int max_pos = 0, i;
-    for (i = 1; i < ways; i++)
-        if (attackCompar(&cache[max_pos], &cache[i]) > 0)
-            max_pos = i;
-    return max_pos;
-}
-
-void loadSortAndSave(char *addr, size_t filesize){
-    Attack *cache = malloc(filesize);
+    int heap_len = available_mem / sizeof(SelWrapper);
+    Heap *h = hInit(sizeof(SelWrapperO), heap_len, selWrapperOCompar);
+    unsigned int ins = 0;
     FILE *input = fopen(addr, "rb");
-    int items_read = fread(cache, sizeof(Attack), filesize / sizeof(Attack),
-                           input);
+
+    // Fills the heap with the first elements of the file
+    w_cache.flag = 0;
+    while (hNum(h) < heap_len && fread(&r_cache, sizeof(Attack), 1, input)){
+        w_cache.a = r_cache;
+        w_cache.ins = ins;
+        hInsert(h, &w_cache);
+        ins++;
+    }
+
+    // Reads remaining elements
+    while (fread(&r_cache, sizeof(Attack), 1, input)){
+        hPop(h, &w_cache);
+        fwrite(&w_cache, sizeof(SelWrapper), 1, write_files[w_cache.flag % ways]);
+        if (attackCompar(&r_cache, &w_cache) < 0)
+            w_cache.flag++; // Next block.
+        w_cache.a = r_cache;
+        w_cache.ins = ins;
+        hInsert(h, &w_cache);
+        ins++;
+    }
+
+    while (hNum(h) > 0){
+        hPop(h, &w_cache);
+        fwrite(&w_cache, sizeof(SelWrapper), 1, write_files[w_cache.flag]);
+    }
+
+    hDelete(h);
     fclose(input);
-    msort(cache, items_read, sizeof(Attack), attackCompar);
-    FILE *output = fopen(addr, "wb");
-    fwrite(cache, items_read, sizeof(Attack), output);
-    fclose(output);
+    return w_cache.flag + 1; // Number of sorted blocks
 }
 
-static int mergePass(FILE **read_files, FILE *write_file, Attack *cache,
-    int ways, int *way_pos, int items_in_block){
-    int ways_done = 0, items_written = 0;
+void additionalPass(FILE **read_files, FILE **write_files, int ways){
+    SelWrapperO r_cache, w_cache;
+    Heap *h = hInit(sizeof(SelWrapperO), ways, attackOCompar);
+    Heap *next = hInit(sizeof(SelWrapperO), ways, attackOCompar);
+    unsigned int ins = 0;
+
     int i;
-    // Read first element of each block in column to cache
     for (i = 0; i < ways; i++){
-        if (!fread(&cache[i], sizeof(Attack), 1, read_files[i])){
-            way_pos[i] = items_in_block;
-            cache[i].panzers = DONE_WITH_WAY_FLAG;
-            ways_done++;
-        } else {
-            way_pos[i] = 0;
+        if (fread(&r_cache, sizeof(SelWrapper), 1, read_files[i])){
+            r_cache.flag = i;
+            r_cache.ins = ins;
+            hInsert(h, &r_cache);
+            ins++;
         }
     }
-    while (ways_done < ways){
-        int max_pos = getMaxIndex(cache, ways);
-        // Write item in max priority way to current write file
-        fwrite(&cache[max_pos], sizeof(Attack), 1,
-               write_file);
-        items_written++;
-        // Increment count of items read from each way
-        way_pos[max_pos]++;
-        if (way_pos[max_pos] < items_in_block){
-            if (!fread(&cache[max_pos], sizeof(Attack), 1,
-                read_files[max_pos])){
-                way_pos[max_pos] = items_in_block;
-                cache[max_pos].panzers = DONE_WITH_WAY_FLAG;
-                ways_done++;
+
+    int cur_file = 0;
+    unsigned int ins_next = 0;
+    while (hNum(h)){
+        while (hNum(h)){
+            hPop(h, &w_cache);
+            if (fread(&r_cache, sizeof(SelWrapper), 1,
+                      read_files[w_cache.flag % ways])){
+                if (r_cache.flag == w_cache.flag){
+                    r_cache.ins = ins;
+                    hInsert(h, &r_cache);
+                    ins++;
+                } else {
+                    r_cache.ins = ins_next;
+                    hInsert(next, &r_cache);
+                    ins_next++;
+                }
             }
+            w_cache.flag = cur_file;
+            fwrite(&w_cache, sizeof(SelWrapper), 1,
+                   write_files[cur_file % ways]);
         }
-        else {
-            cache[max_pos].panzers = DONE_WITH_WAY_FLAG;
-            ways_done++;
-        }
+        SWAP(h, next);
+        ins = ins_next;
+        ins_next = 0;
+        cur_file++;
     }
-    return items_written;
+
+    hDelete(h);
+    hDelete(next);
+}
+
+void saveToAddr(char *addr, char *w_prefix, size_t available_mem, int ways){
+    char filename_buffer[FILENAME_BFSIZE];
+    sprintf(filename_buffer, "%s%04d.tmp", w_prefix, 0);
+    FILE *input = fopen(filename_buffer, "rb");
+    FILE *output = fopen(addr, "wb");
+    SelWrapper cache;
+    while (fread(&cache, sizeof(SelWrapper), 1, input)){
+        fwrite(&cache, sizeof(Attack), 1, output);
+    }
+    fclose(input);
+    fclose(output);
 }
 
 void sortAttackList(char *addr, size_t filesize, size_t available_mem,
-    int ways){
-    if (filesize <= available_mem){
-        loadSortAndSave(addr, filesize);
-        return;
-    }
-
-    int items_in_block = available_mem / (sizeof(Attack) * 2); // 2: merge sort compensation
-    int cache_length = items_in_block;
-    int items_in_file = filesize / sizeof(Attack);
-
-    Attack *cache = malloc(cache_length * sizeof(Attack));
-    
+    int ways, char *r_prefix, char *w_prefix){
     FILE **read_files = malloc(sizeof(FILE *) * ways);
     FILE **write_files = malloc(sizeof(FILE *) * ways);
 
-    openWriteFiles(write_files, ways);
-
-    // First pass: loads mem-sized blocks to the cache, sorts them and outputs
-    // them sequentially to each output file
-    FILE *input = fopen(addr, "rb");
-    int items_read;
-    int cur_wr_file = 0;
-    while ((items_read = fread(cache, sizeof(Attack), items_in_block,
-            input))){
-        msort(cache, items_read, sizeof(Attack), attackCompar);
-        fwrite(cache, sizeof(Attack), items_read, write_files[cur_wr_file]);
-        cur_wr_file = (cur_wr_file + 1) % ways;
-    }
-    
-    fclose(input);
-
-    closeWriteFiles(write_files, ways);
-    openAllFiles(read_files, write_files, ways);
-
-    int *way_pos = malloc(sizeof(int) * ways);
-    cur_wr_file = 0;
-
-    while (items_in_block < items_in_file){
-        int items_written = 0;
-        while (items_written < items_in_file){            
-            items_written += mergePass(read_files, write_files[cur_wr_file],
-                                       cache, ways, way_pos, items_in_block);
-            cur_wr_file = (cur_wr_file + 1) % ways;
-        }
-        items_in_block *= ways;
-        cur_wr_file = 0;
-
-        closeAllFiles(read_files, write_files, ways);
-        openAllFiles(read_files, write_files, ways);
-    }
-
-    FILE *output = fopen(addr, "wb");
-    while ((items_read = fread(cache, sizeof(Attack), cache_length,
-            read_files[0]))){
-        fwrite(cache, sizeof(Attack), items_read, output);
-    }
-    fclose(output);
-
+    openAllFiles(read_files, r_prefix, write_files, w_prefix, ways);
+    int blocks = initialPass(addr, write_files, available_mem, ways);
     closeAllFiles(read_files, write_files, ways);
 
-    free(cache);
+    while (blocks > 1){
+        SWAP(r_prefix, w_prefix);
+        openAllFiles(read_files, r_prefix, write_files, w_prefix, ways);
+        additionalPass(read_files, write_files, ways);
+        closeAllFiles(read_files, write_files, ways);
+        if (blocks % ways)
+            blocks += ways;
+        blocks /= ways;
+    }
+
+    saveToAddr(addr, w_prefix, available_mem, ways);
+
     free(read_files);
     free(write_files);
-    free(way_pos);
 }
