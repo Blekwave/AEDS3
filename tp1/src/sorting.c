@@ -10,25 +10,28 @@
 typedef struct {
     Attack a;
     int flag;
-} SelWrapper;
+    int ins;
+} Wrapper;
 
 typedef struct {
     Attack a;
     int flag;
-    int ins;
-} SelWrapperO;
+} WrapperBare;
 
-long long selWrapperOCompar(const void *a, const void *b){
+long long wrapperCompar(const void *a, const void *b){
     int t;
-    return (t = ((SelWrapper *)a)->flag - ((SelWrapper *)b)->flag) ? t :
+    return (t = ((Wrapper *)a)->flag - ((Wrapper *)b)->flag) ? t :
            (t = attackCompar(a, b)) ? t :
-                (((SelWrapperO *)a)->ins - ((SelWrapperO *)b)->ins);
+           (((Wrapper *)a)->ins - ((Wrapper *)b)->ins);
 }
 
-long long attackOCompar(const void *a, const void *b){
+long long attackInsCompar(const void *a, const void *b){
     int t;
-    return (t = attackCompar(a, b)) ? t : ((long long)((SelWrapperO *)a)->ins - ((SelWrapperO *)b)->ins);
+    return (t = attackCompar(a, b)) ? t :
+           (t = ((Wrapper *)a)->flag - ((Wrapper *)b)->flag) ? t :
+           (((Wrapper *)a)->ins - ((Wrapper *)b)->ins);
 }
+
 
 void closeAllFiles(FILE **read_files, FILE **write_files, int ways){
     int i;
@@ -68,7 +71,7 @@ void openAllFiles(FILE **read_files, char *r_prefix,
  * @return             Number of blocks generated.
  *
  * Information about the data in the new temporary files:
- * Each block of attacks contains selWrappers, which wrap the attacks themselves
+ * Each block of attacks contains Wrappers, which wrap the attacks themselves
  * and the identifier of the block they're in. Due to the fact that the blocks
  * are written sequentially to the files, this means that all blocks in the file
  * with index I have id I mod WAYS. e.g. (3 ways):
@@ -80,10 +83,11 @@ void openAllFiles(FILE **read_files, char *r_prefix,
 int initialPass(char *addr, FILE **write_files, size_t available_mem, int ways){
     // Initial pass
     Attack r_cache;
-    SelWrapperO w_cache;
+    Wrapper w_cache;
 
-    int heap_len = available_mem / sizeof(SelWrapper);
-    Heap *h = hInit(sizeof(SelWrapperO), heap_len, selWrapperOCompar);
+    int heap_len = available_mem / sizeof(Wrapper);
+    //heap_len = 2;
+    Heap *h = hInit(sizeof(Wrapper), heap_len, wrapperCompar);
     int ins = 0;
     FILE *input = fopen(addr, "rb");
 
@@ -99,7 +103,8 @@ int initialPass(char *addr, FILE **write_files, size_t available_mem, int ways){
     // Reads remaining elements
     while (fread(&r_cache, sizeof(Attack), 1, input)){
         hPop(h, &w_cache);
-        fwrite(&w_cache, sizeof(SelWrapper), 1, write_files[w_cache.flag % ways]);
+        // printf("Inserting %d: %d,%d in %d\n", w_cache.a.panzers, w_cache.a.x, w_cache.a.y, w_cache.flag);
+        fwrite(&w_cache, sizeof(WrapperBare), 1, write_files[w_cache.flag % ways]);
         if (attackCompar(&r_cache, &w_cache) < 0)
             w_cache.flag++; // Next block.
         w_cache.a = r_cache;
@@ -110,7 +115,7 @@ int initialPass(char *addr, FILE **write_files, size_t available_mem, int ways){
 
     while (hNum(h) > 0){
         hPop(h, &w_cache);
-        fwrite(&w_cache, sizeof(SelWrapper), 1, write_files[w_cache.flag]);
+        fwrite(&w_cache, sizeof(WrapperBare), 1, write_files[w_cache.flag % ways]);
     }
 
     hDelete(h);
@@ -118,28 +123,28 @@ int initialPass(char *addr, FILE **write_files, size_t available_mem, int ways){
     return w_cache.flag + 1; // Number of sorted blocks
 }
 
-void additionalPass(FILE **read_files, FILE **write_files, int ways){
-    SelWrapperO r_cache, w_cache;
-    Heap *h = hInit(sizeof(SelWrapperO), ways, attackOCompar);
-    Heap *next = hInit(sizeof(SelWrapperO), ways, attackOCompar);
+int additionalPass(FILE **read_files, FILE **write_files, int ways){
+    Wrapper r_cache, w_cache;
+    Heap *h = hInit(sizeof(Wrapper), ways, attackInsCompar);
     int ins = 0;
 
     int i;
     for (i = 0; i < ways; i++){
-        if (fread(&r_cache, sizeof(SelWrapper), 1, read_files[i])){
-            r_cache.flag = i;
+        if (fread(&r_cache, sizeof(WrapperBare), 1, read_files[i])){
             r_cache.ins = ins;
             hInsert(h, &r_cache);
             ins++;
         }
     }
 
-    int cur_file = 0;
+    Heap *next = hInit(sizeof(Wrapper), ways, attackInsCompar);
     int ins_next = 0;
+
+    int cur_file = 0;
     while (hNum(h)){
         while (hNum(h)){
             hPop(h, &w_cache);
-            if (fread(&r_cache, sizeof(SelWrapper), 1,
+            if (fread(&r_cache, sizeof(WrapperBare), 1,
                       read_files[w_cache.flag % ways])){
                 if (r_cache.flag == w_cache.flag){
                     r_cache.ins = ins;
@@ -152,7 +157,7 @@ void additionalPass(FILE **read_files, FILE **write_files, int ways){
                 }
             }
             w_cache.flag = cur_file;
-            fwrite(&w_cache, sizeof(SelWrapper), 1,
+            fwrite(&w_cache, sizeof(WrapperBare), 1,
                    write_files[cur_file % ways]);
         }
         SWAP(h, next);
@@ -163,6 +168,7 @@ void additionalPass(FILE **read_files, FILE **write_files, int ways){
 
     hDelete(h);
     hDelete(next);
+    return cur_file;
 }
 
 void saveToAddr(char *addr, char *w_prefix, size_t available_mem, int ways){
@@ -170,8 +176,8 @@ void saveToAddr(char *addr, char *w_prefix, size_t available_mem, int ways){
     sprintf(filename_buffer, "%s%04d.tmp", w_prefix, 0);
     FILE *input = fopen(filename_buffer, "rb");
     FILE *output = fopen(addr, "wb");
-    SelWrapper cache;
-    while (fread(&cache, sizeof(SelWrapper), 1, input)){
+    WrapperBare cache;
+    while (fread(&cache, sizeof(WrapperBare), 1, input)){
         fwrite(&cache, sizeof(Attack), 1, output);
     }
     fclose(input);
@@ -190,11 +196,8 @@ void sortAttackList(char *addr, size_t filesize, size_t available_mem,
     while (blocks > 1){
         SWAP(r_prefix, w_prefix);
         openAllFiles(read_files, r_prefix, write_files, w_prefix, ways);
-        additionalPass(read_files, write_files, ways);
+        blocks = additionalPass(read_files, write_files, ways);
         closeAllFiles(read_files, write_files, ways);
-        if (blocks % ways)
-            blocks += ways;
-        blocks /= ways;
     }
 
     saveToAddr(addr, w_prefix, available_mem, ways);
