@@ -11,8 +11,8 @@
 
 int base_x, base_y;
 
-char *r_prefix = "tmp\\A";
-char *w_prefix = "tmp\\B";
+char *r_prefix = "A";
+char *w_prefix = "B";
 
 int main(int argc, char const *argv[])
 {

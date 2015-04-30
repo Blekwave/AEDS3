@@ -1,8 +1,5 @@
-#include <malloc.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include "attack.h"
 #include "heap.h"
 #include "sorting.h"
