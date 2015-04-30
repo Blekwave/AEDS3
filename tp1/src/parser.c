@@ -7,6 +7,32 @@
 
 #define DIGIT_OFFSET 48
 
+////////////////////////////////////////////////////////////////////////////////
+// FSM State reference                                                        //
+//                                                                            //
+// PHASE 1                                                                    //
+// 0: Initial state                                                           //
+// 1: read 'p'                                                                //
+// 2: read 'po+', can accept more 'o's for extra panzers                      //
+// 3: read 'po+i'                                                             //
+// 4: read 'po+in'                                                            //
+// 5: read 'po+int'                                                           //
+//                                                                            //
+// PHASE 2: reading '(', more than a single ',' or a value that exceeds 99999 //
+//          will reset to state zero.                                         //
+// 6: read 'po+int(', reading ',' will reset to zero                          //
+// 7: read 'po+int([0-9]+'                                                    //
+// 8: read 'po+int([0-9]+,'                                                   //
+// 9: read 'po+int([0-9]+,[0-9]+'                                             //
+// '10': read 'po+int([0-9]+,[0-9]+)' (resets to zero and saves coordinates)  //
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Resets the finite state machine to state zero.
+ * @param a     Temporary Attack in which the coordinates and the number of pan-
+ *              zers is stored, to be reset.
+ * @param state Variable which stores the current state.
+ */
 void resetFSM(Attack *a, char *state){
     a->panzers = 1;
     a->x = 0;
@@ -14,30 +40,17 @@ void resetFSM(Attack *a, char *state){
     *state = 0;
 }
 
-// FSM State reference
-// (I should really make this into an enum or at least a bunch of defines)
-// 
-// PHASE 1
-// 0: Initial state
-// 1: read 'p'
-// 2: read 'po+', can accept more 'o's for extra panzers
-// 3: read 'po+i'
-// 4: read 'po+in'
-// 5: read 'po+int'
-// 
-// PHASE 2: reading '(', more than a single ',' or a value that exceeds 99999
-//          will reset to state zero.
-// 6: read 'po+int(', reading ',' will reset to zero
-// 7: read 'po+int([0-9]+'
-// 8: read 'po+int([0-9]+,'
-// 9: read 'po+int([0-9]+,[0-9]+'
-// '10': read 'po+int([0-9]+,[0-9]+)' (resets to zero and saves coordinates)
-// 
-
+/**
+ * Parses stdin for a ciphered message containing the attacks to be performed by
+ * the enemy.
+ * @param  addr Address of the file where the Attacks will be written.
+ * @return      Size of the file.
+ */
 size_t parseData(const char *addr){
     FILE *out = fopen(addr, "wb");
-    char c, state = 0;
-    Attack a = {1, 0, 0};
+    char c, state;
+    Attack a;
+    resetFSM(&a, &state); // Sets to state 0
     while ((c = getchar()) != EOF){
         if (state < 6){ // PHASE 1
             if ((c == 'p' && state == 0) ||
@@ -86,6 +99,10 @@ size_t parseData(const char *addr){
     return size;
 }
 
+/**
+ * Reads a file containing a list of attacks and prints it to stdout.
+ * @param addr Address of the file which contains a list of attacks.
+ */
 void unpackData(const char *addr){
     FILE *in = fopen(addr, "rb");
     Attack a;
