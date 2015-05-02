@@ -7,6 +7,6 @@ typedef struct {
     int y;
 } Attack;
 
-long long attackCompar(const void *a, const void *b);
+int attackCompar(const void *a, const void *b);
 
 #endif

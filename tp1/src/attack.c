@@ -13,10 +13,8 @@ typedef struct {
 } Attack;
  */
 
-#define sqr(X) ((X) * (X))
-#define AtX(X) (((Attack *)(X))->x)
-#define AtY(X) (((Attack *)(X))->y)
-#define distbase(X) (sqr((long long)AtX(X) - base_x) + sqr((long long)AtY(X) - base_y))
+#define sqr(X) (((long long)(X)) * (X))
+#define distbase(X) (sqr((X)->x - base_x) + sqr((X)->y - base_y))
 
 /**
  * Comparison function that determines the order of two Attacks. Given two at-
@@ -32,9 +30,12 @@ typedef struct {
  *              - = 0 if A and B are equivalent
  *              - > 0 if B should come before A
  */
-long long attackCompar(const void *a, const void *b){
-    int t;
-    return
-        (t = ((Attack *)b)->panzers - ((Attack *)a)->panzers) ? t :
-        (distbase(a) - distbase(b));
+int attackCompar(const void *a, const void *b){
+    const Attack *A = a, *B = b;
+    if (B->panzers - A->panzers){
+        return B->panzers - A->panzers;
+    } else {
+        long long dist = distbase(A) - distbase(B);
+        return dist > 0 ? 1 : (dist < 0 ? -1 : 0);
+    }
 }

@@ -5,14 +5,15 @@
 
 typedef struct {
     unsigned int size;
-    long long (*compar)(const void *a, const void *b);
+    int (*compar)(const void *a, const void *b);
     unsigned long long len;
     unsigned long long num;
     void *root;
+    void *swapbuffer;
 } Heap;
 
 Heap *hInit(unsigned int size, unsigned long long max,
-            long long (*compar)(const void *a, const void *b));
+            int (*compar)(const void *a, const void *b));
 
 void hInsert(Heap *h, void *data);
 
