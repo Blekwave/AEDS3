@@ -1,0 +1,54 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\title{TP1: Where are the Panzers?}
+\author{Victor Pires Diniz}
+\date{}
+
+\begin{document}
+\maketitle
+
+Algoritmos e Estruturas de Dados III - 1º Semestre de 2015
+
+\section*{Introduction}
+
+String processing and external sorting are important classes of problems in computer science. This work combines both of them by addressing a fictitious scenario from World War II in which messages from the Axis have been intercepted. A program must be written to, then, parse these messages, in order to clear any noise and figure out where their troops will be deployed for attacks and how many will be.
+
+These messages are all obtained in a continuous stream of data, and the program must, therefore, identify where given patterns show up. This would be a great opportunity to use regular expressions, but C's standard library features no such procedures, sadly. Implementing a regex library would be overkill and likely much more trouble than it's worth. A good, simpler alternative to that would be to implement a string-matching automaton to parse these messages, which is what the parsing module of this project does, essentially.
+
+Then, the Alliance must assess the priorities between each attack to establish a strategy and minimize losses. That is done by sorting the attacks, prioritizing the ones with the most tanks and, if there's a tie, the ones that are closer to the headquarters. If there's still attacks with the same priority, then they should be dealt with in the order they appeared originally. This last detail creates an issue: not only must the program be able to sort these attacks, it must do so stably.
+
+Finally, in order to match the scenario, the program must be able to run in an environment with limited primary memory. Accordingly, it should be able to run and sort data in the hard drive, since the attacks could easily exceed the memory that's left of what the program's other variables and binary data need. Ways to solve this will be described in the next section.
+
+\section*{Getting it done}
+
+The problem to be handled here, as stated before, has two distinct parts: parsing and sorting. Both of them deal with attacks, which are defined in the program as a simple type which contains three integer fields: the number of tanks (or panzers) as well as the coordinates of the attack.
+
+\subsection*{Parsing}
+
+A simple automaton can be used for matching a string with given characteristics. The way it does it is by fetching each character of the string sequentially and moving between states. Since the problem states that there may be noise between the valid characters read, unexpected characters should not reset the machine, but keep it in the same state.
+
+In this case, the pattern to be matched can be split in two: the first section is made up of `p', followed by any number of `o's larger than zero, `i', `n' and, finally, `t'. The number of `o's read denotes the number of tanks in the attack. Any characters that don't match the expected inputs for a given state are considered noise and ignored. After `t', the program expects to read `(', which prompts the second phase of the automaton.
+
+In the second phase, the automaton expects a number from $0$ to $99999$, a comma (',') and another number from $0$ to $99999$, followed by `)' in the end. These values mean the `x' and `y' coordinates of the attack. However, many inputs are considered invalid. The following characters under certain circumstances can make the finite state machine reset to state `0', back to when it expected to read the first `p':
+
+\begin{itemize}
+    \item A second `(';
+    \item A comma before reading any valid number;
+    \item A second comma;
+    \item A digit which makes the current coordinate exceed the maximum accepted value.
+\end{itemize}
+
+Any other character is considered noise and is promptly ignored. When the automaton successfully reaches the final state, it prints the attack to an output file. Then, all that's left is to sort the file and print it back.
+
+\subsection*{Sorting}
+
+There are many different ways to sort a file that doesn't fit entirely in the amount of available RAM. The most popular solution is the external merge sort, which is relatively simple. However, the first step of this algorithm is to load the maximum amount of blocks which fit in memory, sort them and write them as a single block to a temporary file, repeating this as often as necessary. The issue here is that every sorting operation in this program must be stable,
+
+
+\section*{Assymptotic complexity analysis}
+
+\section*{Experimental analysis}
+
+\section*{Conclusion}
+
+\end{document}
