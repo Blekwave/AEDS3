@@ -1,8 +1,11 @@
-\documentclass{article}
+\documentclass[10pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
+\usepackage[ruled]{algorithm2e}
 \title{TP1: Where are the Panzers?}
 \author{Victor Pires Diniz}
 \date{}
+
+\newcommand{\Mod}[1]{\ (\text{mod}\ #1)}
 
 \begin{document}
 \maketitle
@@ -40,12 +43,147 @@ In the second phase, the automaton expects a number from $0$ to $99999$, a comma
 
 Any other character is considered noise and is promptly ignored. When the automaton successfully reaches the final state, it prints the attack to an output file. Then, all that's left is to sort the file and print it back.
 
+\subsection*{Heap}
+
+The next module, which deals with sorting, uses a heap to perform the sorting operation. The heap is a kind of binary tree in which a given node's children are smaller than itself (in the case of a max-heap). It is also always balanced, and often implemented via an array. There's no requirements for which child is larger or smaller, and, because of this, the heap is not suitable for search operations. However, its main property makes extracting the largest element very straight-forward.
+
+Inserting an element to the heap can be done by inserting it to the first free element in the array (after all existing nodes) and enforcing the heap's main property locally: if the newly inserted element is larger than its parent, they should be swapped. Then, the same check needs to be made to the new parent node until the child node is actually smaller than the parent node or it becomes the new root, in case it's actually the largest element currently in the heap.
+
+Removal of the largest element is also rather simple: first, the element in the root is removed and its value is saved to be returned. Then, all that's left is to fix 
+
 \subsection*{Sorting}
 
-There are many different ways to sort a file that doesn't fit entirely in the amount of available RAM. The most popular solution is the external merge sort, which is relatively simple. However, the first step of this algorithm is to load the maximum amount of blocks which fit in memory, sort them and write them as a single block to a temporary file, repeating this as often as necessary. The issue here is that every sorting operation in this program must be stable,
+There are many different ways to sort a file that doesn't fit entirely in the amount of available RAM. The most popular solution is the external merge sort, which involves loading the maximum amount of elements possible to primary memory, sorting them, saving these blocks in temporary files and, then, performing an N-way merge. The sorting algorithm used in this project, which is presented in the following paragraphs, is an improvement to the regular external merge sort which uses a heap to perform both the internal sorting and the N-way merge. \textbf{Replacement selection} is a variation of the selection sort which uses an auxiliary heap to determine the smallest element, in a tournament sort-style selection.
 
+\subsubsection*{Initial distribution}
+
+\begin{algorithm}[H]
+    \caption{Initial distribution pseudocode}
+
+    \SetKwInOut{Input}{input}
+    \SetKwInOut{Output}{output}
+
+    \Input{An input file that contains a list of attacks (input), an array of output files of size $\#ways$ (outputs) and the size of the available memory ($m$).}
+    \Output{Sorted blocks of attacks in the output files.}
+    \BlankLine
+    $h$ = StableHeap(length $m$ / (size of attack + size of flag)\;
+    $a$ = input.ReadNext()\;
+
+    \While{$a \neq nil$ and $h$ not full}{
+        $h$.Insert($a$, flag $\leftarrow$ 0)\;
+        $a$ $\leftarrow$ input.ReadNext()\;
+    }
+    \While{$a  \neq nil$}{
+        $w$ $\leftarrow$ $h$.pop() // remove maximum priority element from the heap\; 
+        outputs[$w.flag \pmod{ways}$].Write($w$)\;
+        \eIf{$a$ has higher priority than b}{
+            $h$.Insert($a$, flag $\leftarrow$ $w.flag$ + 1)\;
+        }{
+            $h$.Insert($a$, flag $\leftarrow$ $w.flag$)\;
+        }
+        $a$ $\leftarrow$ input.ReadNext()\;
+    }
+    \While{$h$ not empty}{
+        $w$ $\leftarrow$ $h$.Pop()\;
+        outputs[$w.flag \pmod{ways}$].Write($w$)\;
+    }
+    return $w.flag + 1$ // number of sorted blocks written\;
+\end{algorithm}
+
+
+First of all, a heap of attacks is created, defined to be as long as possible within the memory constraints, and filled with elements from the input file until it is full. Then, in order to read the subsequent elements, the smallest (this explanation assumes an ascending sort) element is removed from the heap and written to a temporary file which will contain a sorted block of elements. The newly read element is added to the heap, but in case it is smaller than the element which was just added, it can not be inserted into the same block. Therefore, an additional field is assigned to each element added to the heap: a flag that denotes to which block it belongs. If the element that has just been read shouldn't be allowed into the current block, then its flag field should be set to the identifier of the next block. It ought to be set to the current block's ID otherwise. When all elements in the heap belong to the next block, it becomes the current block, and the ensuing removed elements will be printed to it instead. This process continues until the input file reaches its end. Then, the heap should be simply emptied.
+
+This initial split method is particularly efficient because the blocks created in the first step of the procedure are, on average, twice as long as the ones created in a multiway merge, which are as large as the available memory ($m$). This is due to the fact that there are, initially, $m$ entries in the heap. When a new element is read, if it is random, it should have equal chance of being larger or smaller than the element which was just removed. By itself, this guarantees that, on average, $1.5m$ elements will be output to a block. However, the extra $0.5m$ elements will also, on average, add more $0.25m$ entries to the current block. Clearly, this is the sum of an infinite geometric progression with common ratio $\frac{1}{2}$ and initial value $m$, which equates to $2m$.
+
+\[
+    \sum_{i=0}^{\infty} \frac{1}{2^i} = \frac{1}{1 - \frac{1}{2}} = 2
+\]
+
+This is advantageous because the time required for performing an external merge sort is predominantly defined by the number of runs generated by this initial distribution, which is inversely proportional to the number of blocks. Larger blocks means fewer blocks, which makes replacement selection an attractive technique. The equation below denotes the expected number of runs required to finish the multiway merge, in which $n$ means the number of entries in the unsorted file and $m$ the amount of elements that fit in primary memory:
+
+\[
+    \log_{\#ways} \left \lceil{\frac{n}{2m}}\right \rceil
+\]
+
+Blocks are written to files in sequence: the first block to the first file, the second block to the second file etc. In case the number of blocks is larger than the number of ways of the multiway merge, the program should simply wrap back to the first file. A block with a given id should, therefore, belong to file $id \pmod {\#ways}$. Also, due to the fact that these files will be read from and written to, there should be two sets of temporary files available to the procedure, each one with as many files as the number of ways.
+
+\subsubsection*{Multiway merge}
+
+\begin{algorithm}[H]
+    \caption{Multiway merge pseudocode}
+
+    \SetKwInOut{Input}{input}
+    \SetKwInOut{Output}{output}
+
+    \Input{An array of input files of size $\#ways$ (inputs), an array of output files of size $\#ways$ (outputs).}
+    \Output{Sorted blocks of attacks in the output files.}
+    \BlankLine
+    $h$ = StableHeap(length $m$ / (size of attack + size of flag)\;
+    \For{$i\leftarrow0 to (\#ways - 1)$}{
+        $a$ = inputs[i].ReadNext()\;
+        $h$.Insert($a$, $flag \leftarrow i$)\;
+    }
+    $next$ = StableHeap(length $m$ / (size of attack + size of flag)\;
+    $current\_file \leftarrow 0$\;
+    \While{$h$ not empty}{
+        \While{$h$ not empty}{
+            $w$ = $h$.Pop()\;
+            $a$ = inputs[$w.flag \pmod{ways}$].ReadNext()\;
+            \eIf{$a.flag = w.flag$}{
+                $h$.Insert($a$, $flag \leftarrow a.flag$)\;
+            } {
+                $next$.Insert($a$, $flag \leftarrow a.flag$)\;
+            }
+            $w.flag \leftarrow current\_file$\;
+            outputs[$w.flag \pmod{ways}$].Write($w$)\;
+        }
+        Swap($h$, $next$)\;
+        $current\_file++$\;
+    }
+    return $current\_file$\;
+\end{algorithm}
+
+The second part of the replacement selection method uses, once again, a heap, but this time its length is equal to the number of ways. This step is basically an N-way merge, but using a heap to optimize the operation for selecting the smallest element that hasn't been added yet. The procedure is very simple: for each row of blocks (group containing a single block of sorted entries from each file) from the initial operation, the first element of each block is added to the heap. Then, the smallest element is removed from the heap, printed to the first output file and another element from the same block as the one which was removed is added to the heap. This keeps on going until all the blocks from this row are emptied. After that, the same scheme is repeated for the next block row, with the entries being written to the next available output file this time. Once all block rows are finished, the number of existing sorted blocks in the output files should be $\left \lceil{\#ways}\right \rceil$ times smaller than there were before. Thus, the procedure can simply be repeated, with the output files being used as input, until there is only a single sorted block left. The only thing left is to copy this block back to the original file.
 
 \section*{Assymptotic complexity analysis}
+
+Due to the fact that external memory operations are much slower than primary memory operations, the assymptotic time complexity analysis will be performed in regard to file input and output.
+
+\subsection*{Parsing}
+
+\subsubsection*{parseData}
+
+This function is the main function in the parsing module. It simply obtains each character from the standard input and goes through a chain of conditionals, printing coordinates to the output file if it reaches the final state. Its time complexity is, considering a constant ratio of noise to valid data in the input, $O(n)$ concerning its file operations.
+
+\subsubsection*{unpackData}
+
+This procedure is very straight-forward: it simply reads data from a file linearly and prints it to standard output. It is, therefore, $O(n)$.
+
+\subsection*{Sorting}
+
+\subsubsection*{Heap operations}
+
+Due to the fact that the heap implementation used involves no operations in primary memory, its time complexity is not particularly relevant to this project. Its space complexity, in the context of the sorting operation, is $O(1)$, because the heaps created for replacement selection have size $m$ (distribution step) and $\#ways$ (multiway merge). Neither of these depend on the input's length.
+
+\subsubsection*{initialDistribution}
+
+The initial distribution procedure reads the file that contains the attacks parsed from the original input file, distributing the entries in sorted blocks. It does a single pass through its input file. Because of that, its time complexity is $O(n)$. Also, as far as space complexity goes, is has only a bunch of static variables and a single dynamically allocated heap with size proportional to the available memory, which has no relation to the input's size. Thus, its space complexity is $O(1)$ concerning primary memory. The function reads and writes to different file sets, though, and, because of that, $O(n)$ space is required in secondary memory.
+
+\subsubsection*{multiwayMerge}
+
+This procedure performs a single pass through the input files with sorted blocks, merging them into longer blocks. Because it reads each attack only once, this function has linear time complexity concerning file operations. Its space complexity is also $O(1)$ in primary memory, on the grounds that the only dynamically allocated entity are the two heaps used, each one with size $\#ways$. However, similarly to the initialDistribution, $O(n)$ space is required in the disk in order to write the merged blocks.
+
+\subsubsection*{saveToAddr}
+
+This function is extremely similar to unpackData, in the sense that it simply reads each entry in the final sorted block once and prints it back to the original file. It has, therefore, linear time complexity.
+
+\subsubsection*{sortAttacks}
+
+The main function of the sorting module calls initialDistribution once, multiwayMerge $\log_{\#ways} \left \lceil{\frac{n}{2m}}\right \rceil$ times and saveToAddr one time. All of these functions are $O(n)$, which results in $O(n\log{n})$ for the entire procedure. The space complexity is $O(1)$ regarding primary memory, but at any given moment, enough secondary memory space for a complete copy of the input is necessary. This happens because the initial distribution and the multiway merge read and write to different sets of files, which need to be, thereupon, available to be read in the next step. This implies in $O(n)$ space complexity with respect to secondary memory.
+
+\subsection*{Main}
+
+The program's primary function is extremely simple: it calls parseData, sorts the attacks with sortAttacks and prints the sorted attacks back to standard output with unpackData. $O(n) + O(n\log{n}) + O(n) = O(n\log{n})$.
 
 \section*{Experimental analysis}
 

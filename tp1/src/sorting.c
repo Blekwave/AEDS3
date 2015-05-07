@@ -10,6 +10,8 @@
 // Number of ways of the sorting procedure
 #define SORT_WAYS 17
 
+#define MEGABYTE (1024 * 1024)
+
 /**
  * This wrapper contains an Attack and two extra variables. 'flag' is used in
  * the sorting procedures to distinguish between Attacks that belong to diff-
@@ -143,13 +145,13 @@ void assignTmpfiles(FILE **read_files, FILE **write_files){
  * File 2: Blocks 2, 5
  * This fact is useful for better comprehension of additionalPass().
  */
-int initialPass(char *addr, FILE **write_files, int available_mem){
+int initialDistribution(char *addr, FILE **write_files, int available_mem){
     // Initial pass
     Attack r_cache;
     Wrapper w_cache;
 
     unsigned long long heap_len =
-        (((unsigned long long)available_mem) << 20) / sizeof(Wrapper);
+        (((unsigned long long)available_mem) * MEGABYTE) / sizeof(Wrapper);
     Heap *h = hInit(sizeof(Wrapper), heap_len, wrapperCompar);
     if (!h){
         fprintf(stderr, "ERROR: Not enough memory. (1)\n");
@@ -203,14 +205,14 @@ int initialPass(char *addr, FILE **write_files, int available_mem){
  * @param  ways        Number of ways of the sorting operation.
  * @return             Number of new blocks created.
  */
-int additionalPass(FILE **read_files, FILE **write_files){
+int multiwayMerge(FILE **read_files, FILE **write_files){
     Wrapper r_cache, w_cache;
     Heap *h = hInit(sizeof(Wrapper), SORT_WAYS, attackInsCompar);
     if (!h){
         fprintf(stderr, "ERROR: Not enough memory. (2)\n");
         exit(2);
     }
-    int ins = 0;
+    int ins = 0; // Insertion order tracker
 
     // Adds an element from each read file to the heap.
     int i;
@@ -292,7 +294,7 @@ void saveToAddr(char *addr, FILE *input){
  * @param r_prefix      Prefix to be used in the intermediate read files.
  * @param w_prefix      Prefix to be used in the intermediate write files.
  */
-void sortAttackList(char *addr, size_t filesize, int available_mem){
+void sortAttacks(char *addr, size_t filesize, int available_mem){
     FILE *read_files[SORT_WAYS];
     FILE *write_files[SORT_WAYS];
 
@@ -302,11 +304,11 @@ void sortAttackList(char *addr, size_t filesize, int available_mem){
     }
 
     assignTmpfiles(read_files, write_files);
-    int blocks = initialPass(addr, write_files, available_mem);
+    int blocks = initialDistribution(addr, write_files, available_mem);
 
     while (blocks > 1){
         assignTmpfiles(read_files, write_files);
-        blocks = additionalPass(read_files, write_files);
+        blocks = multiwayMerge(read_files, write_files);
     }
 
     rewind(write_files[0]);
