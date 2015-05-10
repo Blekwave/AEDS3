@@ -1,7 +1,6 @@
 \documentclass[10pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[ruled]{algorithm2e}
-\usepackage{multicol}
 \usepackage{fullpage}
 \usepackage{graphicx}
 \usepackage{float}
@@ -12,14 +11,12 @@
 \usepackage[adobe-utopia]{mathdesign}
 \usepackage[T1]{fontenc}
 
-\DeclareGraphicsExtensions{.pdf}
+\DeclareGraphicsExtensions{.jpg,.pdf}
 
 \numberwithin{equation}{section}
 
 \title{TP1: Where are the Panzers?}
 \author{Victor Pires Diniz}
-
-\newcommand{\Mod}[1]{\ (\text{mod}\ #1)}
 
 \begin{document}
 \maketitle
@@ -49,7 +46,7 @@ In this case, the pattern to be matched can be split in two: the first section i
 
 \begin{figure}[H]
     \centering
-    \includegraphics[scale=0.73]{graphics/automaton.pdf}
+    \includegraphics[scale=0.19]{graphics/automaton.jpg}
     \caption{State diagram of the parsing automaton.}
     \label{fig:automaton}
 \end{figure}
@@ -79,7 +76,7 @@ An issue with the heap is that its operations are not stable: it may swap two eq
 
 \begin{figure}[H]
     \centering
-    \includegraphics[]{graphics/replselection.pdf}
+    \includegraphics[scale=0.25]{graphics/replselection.jpg}
     \caption{Diagram showing both phases of the replacement selection algorithm: the initial distribution and the subsequent multiway merges. The blue entries in the initial distribution are flagged and belong to the next block. They become black when the block switch occurs.}
     \label{fig:replselection}
 \end{figure}
