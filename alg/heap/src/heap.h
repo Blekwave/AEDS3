@@ -4,19 +4,22 @@
 #include <string.h>
 
 typedef struct {
-    size_t size;
-    long long (*compar)(const void *a, const void *b);
-    int len;
-    int num;
+    unsigned int size;
+    int (*compar)(const void *a, const void *b);
+    unsigned long long len;
+    unsigned long long num;
     void *root;
+    void *swapbuffer;
 } Heap;
 
-Heap *hInit(size_t size, int max,
-            long long (*compar)(const void *a, const void *b));
+Heap *hInit(unsigned int size, unsigned long long max,
+            int (*compar)(const void *a, const void *b));
 
-void hInsert(Heap *h, const void *data);
+void hInsert(Heap *h, void *data);
 
-void hPop(Heap *h, const void *out);
+void hPop(Heap *h, void *out);
+
+void hEmpty(Heap *h);
 
 int hNum(Heap *h);
 
