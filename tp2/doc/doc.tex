@@ -1,0 +1,35 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[ruled]{algorithm2e}
+\usepackage{fullpage}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[]{amsmath}
+\floatstyle{boxed}
+\restylefloat{figure}
+
+\usepackage[adobe-utopia]{mathdesign}
+\usepackage[T1]{fontenc}
+
+\DeclareGraphicsExtensions{.jpg,.pdf}
+
+\numberwithin{equation}{section}
+
+\title{TP2: Reducing the costs}
+\author{Victor Pires Diniz}
+
+\begin{document}
+\maketitle
+\begin{center}
+Algoritmos e Estruturas de Dados III - 1º Semestre de 2015
+\end{center}
+
+\section{Introdução}
+
+A computação facilita a solução de vários problemas por meio de algoritmos. A ideia é que esses algoritmos possam explorar propriedades do problema para que se possa encontrar, eficientemente, a solução. No entanto, há problemas para os quais até hoje não foi possível encontrar procedimentos eficazes, devido à falta de propriedades úteis evidentes. Em particular, os problemas NP-Completo são problemas para os quais grande parte da comunidade acredita não haver solução polinomial, o que significa que é necessário optar por uma solução sub-ótima ou lidar com algoritmos exponenciais, que rapidamente se tornam inviáveis conforme cresce o tamanho da entrada.
+
+Neste trabalho, o cenário envolve uma empresa de transporte, que deve, partindo de uma cidade inicial, visitar todas as cidades e retornar ao ponto de partida no menor tempo possível. Além disso, há um conjunto de restrições de ordem de visita, que podem mudar a solução obtida ou, até mesmo, inviabilizar a existência de uma solução. Esse problema é uma variação de um problema notoriamente difícil. Posteriormente, será provado que não se conhece um algoritmo polinomial para esse problema, visto que sua versão de decisão é NP-Completa.
+
+É necessário obter a solução ótima, o que significa que não é possível evitar algoritmos que operem em tempo exponencial. No entanto, isso não quer dizer que não haja maneiras de otimizar a solução. Podas e abordagens de \emph{branch-and-bound} são formas de limitar o espaço de busca, tornando mais eficiente a enumeração realizada e permitindo entradas um pouco maiores. Por mais que, eventualmente, uma entrada vá se tornar inviável, esse tipo de melhoria pode ser suficiente para situações reais. No caso deste trabalho, os aprimoramentos realizados fizeram com que entradas anteriormente maiores do que o programa era capaz de resolver se tornassem solucionáveis em tempo aceitável.
+
+\end{document}

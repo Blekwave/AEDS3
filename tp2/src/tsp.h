@@ -6,4 +6,6 @@ typedef struct {
     int y;
 } Point;
 
+double findMinDistance(Point *coords, int num_cities, int *restrictions);
+
 #endif
