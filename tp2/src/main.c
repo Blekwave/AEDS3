@@ -24,7 +24,8 @@ int main(int argc, char const *argv[]){
             // Second should not be visited before first
         }
 
-        double distance = findMinDistance(coords, num_cities, restrictions);
+        double distance = findMinDistance(coords, num_cities,
+                                          restrictions, &num_restrictions);
 
         if (distance >= 0){
             printf("%.2lf\n", distance);

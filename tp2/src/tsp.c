@@ -1,4 +1,5 @@
 #include "tsp.h"
+#include "mst.h"
 #include "amgraph.h"
 #include <stdlib.h>
 #include <math.h>
@@ -15,7 +16,7 @@
  * @return   Distance between A and B.
  */
 double dist(Point a, Point b){
-    return sqrt(sq(a.x - b.x) + sq(a.y - b.y));
+    return sqrt(sq((long long)a.x - b.x) + sq((long long)a.y - b.y));
 }
 
 /**
@@ -29,7 +30,7 @@ AMG *buildDistanceGraph(Point *coords, int num_cities){
     AMG *graph = amgInit(num_cities);
     int i, j;
     for (i = 0; i < num_cities; i++){
-        for (j = 0; j < num_cities; j++){
+        for (j = 0; j < i; j++){
             amgSetEdge(graph, i, j, true, dist(coords[i], coords[j]));
         }
     }
@@ -63,12 +64,15 @@ static void recursiveCall(AMG *graph, int in_path, int num_cities,
         }
         return;
     }
+    
+    // Brute force attempt at reaching the optimal solution
     int i;
-    for (i = 0; i < num_cities; i++){
+    for (i = 1; i < num_cities; i++){
         // !(1 & (in_path >> i)): checks if city #i has already been visited.
         // (restrictions[i] & in_path) == restrictions[i]: checks if all restri-
         // ctions for accessing city #i have been accomplished.
-        if (!(1 & (in_path >> i)) && (restrictions[i] & in_path) == restrictions[i]){
+        if (!(1 & (in_path >> i)) &&
+            (restrictions[i] & in_path) == restrictions[i]){
             double new_dist = distance + amgGetWeight(graph, current_city, i);
             // If the length of the path is greater than the minimum distance
             // found so far, there's no point in proceeding, since it can only
@@ -98,13 +102,22 @@ static void recursiveCall(AMG *graph, int in_path, int num_cities,
  *                      been visited.
  * @return              Length of the shortest path.
  */
-double findMinDistance(Point *coords, int num_cities, int *restrictions){
+double findMinDistance(Point *coords, int num_cities,
+                       int *restrictions, int *num_restrictions){
     if (num_cities == 1)
         return 0;
 
     AMG *graph = buildDistanceGraph(coords, num_cities);
 
-    double min_dist = DBL_MAX;
+
+    double min_dist = mstApproximation(graph, restrictions);
+    
+
+    if (*num_restrictions == 0){
+        *num_restrictions = 1;
+        restrictions[2] = 1 << 1; // 2 can only be accessed if 1 has already
+                                  // been visited.
+    }
 
     recursiveCall(graph, 1, num_cities, restrictions, 0, 0, &min_dist);
 
