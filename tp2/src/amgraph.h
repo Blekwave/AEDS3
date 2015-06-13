@@ -11,23 +11,15 @@ typedef struct {
 } AMGEdge;
 
 typedef struct {
-    AMGEdge **edges;
+    AMGEdge *edges;
     int size;
 } AMG;
 
 AMG *amgInit(int vertices);
 
-AMG *amgCopy(AMG *original);
-
-AMG *amgUnion(AMG *a, AMG *b);
-
-void amgSetEdge(AMG *amg, int a, int b, bool exists, AMGWeight weight);
-
-int amgGetSize(AMG *amg);
+void amgSetEdge(AMG *amg, int a, int b, AMGWeight weight);
 
 AMGWeight amgGetWeight(AMG *amg, int a, int b);
-
-bool amgGetExistance(AMG *amg, int a, int b);
 
 void amgDelete(AMG *amg);
 
