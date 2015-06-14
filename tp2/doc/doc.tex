@@ -26,10 +26,181 @@ Algoritmos e Estruturas de Dados III - 1º Semestre de 2015
 
 \section{Introdução}
 
-A computação facilita a solução de vários problemas por meio de algoritmos. A ideia é que esses algoritmos possam explorar propriedades do problema para que se possa encontrar, eficientemente, a solução. No entanto, há problemas para os quais até hoje não foi possível encontrar procedimentos eficazes, devido à falta de propriedades úteis evidentes. Em particular, os problemas NP-Completo são problemas para os quais grande parte da comunidade acredita não haver solução polinomial, o que significa que é necessário optar por uma solução sub-ótima ou lidar com algoritmos exponenciais, que rapidamente se tornam inviáveis conforme cresce o tamanho da entrada.
+A computação facilita a solução de vários problemas por meio de algoritmos. A ideia é que esses algoritmos possam explorar propriedades do problema para que se possa encontrar, eficientemente, a solução. No entanto, há problemas para os quais até hoje não foi possível encontrar procedimentos eficazes, devido à falta de propriedades úteis evidentes. Em particular, os problemas NP-completo são problemas para os quais grande parte da comunidade acredita não haver solução polinomial, o que significa que é necessário optar por uma solução sub-ótima ou lidar com algoritmos exponenciais, que rapidamente se tornam inviáveis conforme cresce o tamanho da entrada.
 
 Neste trabalho, o cenário envolve uma empresa de transporte, que deve, partindo de uma cidade inicial, visitar todas as cidades e retornar ao ponto de partida no menor tempo possível. Além disso, há um conjunto de restrições de ordem de visita, que podem mudar a solução obtida ou, até mesmo, inviabilizar a existência de uma solução. Esse problema é uma variação de um problema notoriamente difícil. Posteriormente, será provado que não se conhece um algoritmo polinomial para esse problema, visto que sua versão de decisão é NP-Completa.
 
 É necessário obter a solução ótima, o que significa que não é possível evitar algoritmos que operem em tempo exponencial. No entanto, isso não quer dizer que não haja maneiras de otimizar a solução. Podas e abordagens de \emph{branch-and-bound} são formas de limitar o espaço de busca, tornando mais eficiente a enumeração realizada e permitindo entradas um pouco maiores. Por mais que, eventualmente, uma entrada vá se tornar inviável, esse tipo de melhoria pode ser suficiente para situações reais. No caso deste trabalho, os aprimoramentos realizados fizeram com que entradas anteriormente maiores do que o programa era capaz de resolver se tornassem solucionáveis em tempo aceitável.
+
+\section{Formalização do problema e NP-Completude}
+
+O problema apresentado neste trabalho é uma variante de um dos problemas mais famosos na história da ciência da computação: o Problema do Caixeiro Viajante (PCV). Esse problema envolve descobrir o percurso ótimo, partindo de uma cidade arbitrária, de forma a visitar todas as outras cidades e retornar ao ponto inicial. Neste trabalho, há um fator adicional a ser considerado: existe um conjunto de restrições de ordem de acesso.
+
+\subsection{Modelagem em grafos}
+
+A entrada do problema tratado neste trabalho é composta por um conjunto de $n$ cidades e um conjunto de restrições. No entanto, essas cidades são representadas como pares ordenados que denotam sua posição em relação a um ponto arbitrário. Para facilitar a representação e resolução do problema, é feita uma modelagem em grafos. O grafo utilizado é um grafo não-direcionado completo $G$, de $n$ vértices, no qual cada aresta representa a distância euclidiana entre as duas cidades conectadas.
+
+% Representação visual do grafo?
+
+\subsection{Formalização como problema de decisão}
+
+Por ser um problema de otimização, o cenário da empresa de transportes apresentado neste trabalho não é NP-completo, mas sim NP-difícil. Isso ocorre porque, nos problemas NP-completo, é necessário que seja possível verificar a saída do problema em tempo polinomial. Os problemas de otimização requerem que se obtenha o melhor resultado possível, e verificar se um resultado é o melhor possível consiste em resolver o problema novamente (assume-se que isso é impossível em tempo polinomial para problemas NP-difícil). No entanto, é possível formalizar o problema apresentado como um problema de decisão e, então, provar que essa versão dele é um problema NP-completo. Uma forma de realizar tal reformulação é a seguinte:
+
+Dados uma lista de $n$ cidades, as distâncias entre essas cidades, um limite superior $\in \mathbb{R}_{+}$ e um conjunto de restrições de ordem de acesso, existe uma rota que visita todas as cidades exatamente uma vez e, então, retorna à cidade original sem violar nenhuma das restrições propostas, cuja distância é menor que $k$?
+
+\subsection{Prova de NP-completude}
+
+\subsubsection{Algoritmo de verificação polinomial}
+
+Primeiramente, é preciso provar que o problema é \textbf{NP}. Isso pode ser feito através da apresentação de um algoritmo de verificação do resultado do problema em tempo polinomial. No caso do problema em questão, isso é bastante simples. Dado o caminho a ser tomado pelo caminhão da empresa de transportes, o algoritmo se resume a seguir o trajeto e garantir que ele não viola nenhum dos critérios. Ele deve ter distância final menor do que $k$, percorrer todas as cidades, partindo da cidade $0$ e voltar à cidade original.
+
+\begin{algorithm}[H]
+    \DontPrintSemicolon
+    \caption{Pseudocódigo do algoritmo de verificação}
+
+    \SetKwInOut{Input}{Entrada}
+    \SetKwInOut{Output}{Saída}
+
+    \Input{Vetor de cidades visitadas $V$, grafo de cidades e distâncias $G$, limite superior da distância do trajeto $k$ e conjunto de restrições $R$.}
+    \Output{Valor booleano \emph{true} se o caminho é válido, \emph{false} caso contrário.}
+    \BlankLine
+    \If{$V[0] \neq 0$ \textbf{or} $V[-1] \neq 0$}{
+        return \emph{false}\;
+    }
+    $C \gets \{0\}$ \tcp*{Cidades já visitadas}
+    $D \gets 0$ \tcp*{Distância percorrida}
+    $P \gets 0$ \tcp*{Cidade anterior}
+    \For{$v$ in $V[1:]$}{
+        \eIf{$v \in C$ \textbf{or} Cidades visitadas em $C$ não satisfazem as restrições de $R[v]$}{
+            return \emph{false}\;
+        }{
+            $D += G_{P,v}$ \tcp*{Distância entre P e v}
+            $C$.append($v$)\;
+            $P \gets v$\; 
+        }
+    }
+    \eIf{$D \leq k$}{
+        return \emph{true}\;
+    }{
+        return \emph{false}\;
+    }
+\end{algorithm}
+
+Considerando as operações de checar se uma cidade já foi visitada e a conferência das restrições de acesso como $O(n)$, o algoritmo de verificação apresentado acima tem ordem de complexidade $O(n^2)$. Portanto, o problema em questão é NP.
+
+\subsubsection{Prova de NP-dificuldade: redução polinomial}
+
+\section{Implementação}
+
+\subsection{Grafo como matriz de adjacência (\emph{amgraph.c})}
+
+A biblioteca \emph{amgraph.c} é uma implementação simples de um grafo não direcionado como uma matriz de adjacência. A função \emph{amgInit} é responsável pela inicialização do grafo como um grafo vazio de $n$ vértices. Arestas podem ser adicionadas através do procedimento \emph{amgSetEdge}, e seus pesos podem ser conferidos por meio de \emph{amgGetWeight}. Por fim, \emph{amgDelete} libera a memória alocada na inicialização do grafo.
+
+A escolha pela matriz de adjacência se deu pelo fato de que operações de obtenção do peso das arestas do grafo são extremamente frequentes no procedimento recursivo da busca exaustiva. O grafo pode ter no máximo 22 vértices, pelas limitações propostas pelo problema, o que significa que o gasto de memória elevado dessa representação é praticamente insignificante.
+
+\subsection{Solução do problema por busca exaustiva (\emph{tsp.c})}
+
+\emph{tsp.c} é a biblioteca com a funcionalidade principal do programa: resolver o PCV com as restrições impostas. Apesar de evitar a exponencialidade do problema ser assumidamente impossível, técnicas para atenuar a degradação do desempenho do programa são aplicadas, de forma a viabilizar a solução do problema para números um pouco maiores de cidades.
+
+A função \emph{buildDistanceGraph} cria e povoa o grafo cujas arestas são a distância entre as cidades, com base nas coordenadas de cada cidade. Para isso, é utilizada a função auxiliar \emph{dist}, que simplesmente calcula a distância euclidiana entre dois pontos.
+
+\emph{findMinDistance} é uma função que serve basicamente para chamar as outras funções da biblioteca e dar início ao processo recursivo de enumeração. No entanto, a função que realiza, de fato, a busca exaustiva é \emph{recursiveCall}. Essa função mantém informações em escopo local sobre os vértices que já foram visitados, o vértice atual e a distância percorrida, além de informação global sobre a menor distância encontrada até então.
+
+\begin{function}[H]
+    \DontPrintSemicolon
+    \caption{recursiveCall()}
+
+    \KwData{Grafo de cidades e distâncias $G$, conjunto de cidades visitadas $V$, cidade atual $C$, distância percorrida $d$, conjunto de restrições $R$, e mínimo global $D$.}
+    \KwResult{Ao final, $D$ contém o valor do menor trajeto encontrado. Caso esse valor não tenha sido definido, não foi possível encontrar um caminho válido, dadas as restrições impostas.}
+    \BlankLine
+
+    $V$.insert($C$)\;
+
+    \If{$V$contém todas as cidades}{
+        $d += G_{C,0}$ \tcp*{Soma distância para retornar à cidade de origem}
+        \If{$d < D$}{
+            $D \gets d$\;
+        }
+        return\;
+    }
+
+    \For{Cidade $c \notin V$}{
+        \If{$V$satisfaz $R_c$}{
+            $d' \gets d + G_{C,c}$\;
+            \If{$d' \leq D$}{
+                recursiveCall($G$, $V$, $c$, $d'$, $R$, $D$)\;
+            }
+        }
+    }
+\end{function}
+
+A cada chamada, primeiramente é checado se todos os vértices já foram visitados. Nesse caso, soma-se a distância do ponto atual à origem e, se essa distância for menor do que o melhor caminho encontrado até o momento, o novo trajeto é considerado o melhor.
+
+Caso contrário, o loop presente na função tenta, como próximo destino, todas as cidades que não foram visitadas ainda e não tem acesso restrito, considerando as cidades visitadas até o momento. É conferido, para cada cidade, se a adição de tal cidade ao caminho fará com que o caminho em questão ultrapasse o mínimo global encontrado até o momento. A ocorrência disso revela a infrutiferidade de toda a sub-árvore de decisão desse segmento no que cabe a encontrar o melhor caminho.
+
+É possível que não haja caminhos válidos para um conjunto de restrições, o que é considerado um \emph{deadlock}. Isso é avaliado através da atribuição inicial da distância mínima como infinito. Caso nenhum caminho tenha sido encontrado ao final do procedimento, esse valor continuará sendo infinito, e, com isso, é possível constatar o \emph{deadlock}.
+
+Um detalhe relevante da implementação é que, devido ao limite superior de 22 cidades, foi possível avaliar as restrições para um determinado estado em tempo constante, através de máscaras de bits e operações \emph{bitwise}. Ao invés de guardar os vértices já visitados em um vetor, é possível fazer isso em um simples inteiro, considerando o bit menos significativo como o estado da cidade \#0, o segundo menos significativo com o da cidade \#1 e assim por diante. As restrições foram representadas também dessa forma: se o terceiro bit mais significativo da restrição da cidade \#3 é 1, isso significa que é preciso visitar a cidade \#2 antes da \#3, por exemplo. A conferência das restrições, então, é feita com um \emph{bitwise and} entre a máscara de cidades visitadas e as restrições. Se esse operador retorna o mesmo valor da máscara de restrições, isso significa que todas as restrições foram correspondidas com sucesso.
+
+\subsection{Arquivo principal (\emph{main.c})}
+
+Este arquivo contém apenas a função \emph{main}. Ele analisa a entrada de cada caso de teste e constrói as máscaras de restrição e os vetores de coordenadas das cidades. Então, ele chama a função \emph{findMinDistance}, explicada anteriormente, e imprime o resultado da computação realizada.
+
+\section{Análise de complexidade assintótica}
+
+\subsection{\emph{amgraph.c}}
+
+A análise de complexidade assintótica da biblioteca responsável pela representação de grafos como matrizes de adjacência é realizada em função do número de vértices, $V$.
+
+\subsubsection*{\emph{amgInit}}
+
+Esta função simplesmente inicializa o tipo abstrato de dados, alocando a memória necessária e realizando um número constante de atribuições. Sua complexidade temporal é $O(1)$, visto que a função \emph{malloc} não tem seu desempenho como função do tamanho de memória a ser alocado, mas sim da configuração das alocações realizadas, entre outros fatores não relacionados. Por outro lado, esta função tem complexidade de espaço $O(V^2)$, já que é alocada uma matriz quadrada de lado $V$.
+
+\subsubsection*{Outras funções}
+
+\emph{amgSetEdge} e \emph{amgGetWeight} são apenas funções de interface, que operam em tempo constante. \emph{amgDelete} é responsável pela liberação da memória da estrutura, que também é uma operação de desempenho independente do tamanho do grafo.
+
+\subsection{\emph{tsp.c}}
+
+A análise de complexidade assintótica da biblioteca responsável pela solução do problema é realizada em função do número de cidades, $n$.
+
+\subsubsection{\emph{buildDistanceGraph}}
+
+Esta função é responsável pela criação do grafo de distâncias com base no vetor de coordenadas. O número de arestas do grafo equivale a $C_{n,2}$.
+
+\[
+    O(C_{n,2}) = O(\frac{n*(n-1)}{2}) = O(n^2)
+\]
+
+Sua complexidade de espaço corresponde ao gasto da função \emph{amgInit}. Por isso, essa função tem complexidade espacial $O(n^2)$.
+
+\subsubsection{\emph{recursiveCall}}
+
+Nesta função, o fator mais relevante para a análise de complexidade assintótica é a chamada recursiva realizada. É possível expressar essa relação como uma relação de recorrência. Considerando $r$ como o número de cidades restantes a serem visitadas, esta função tem sua recorrência representada pela função $T(r)$, onde:
+
+\[
+    T(r)=\begin{cases}
+        0, & \text{se $r = 0$.}\\
+        rT(r-1), & \text{caso contrário.} 
+    \end{cases}
+\]
+
+A expansão em termos dessa recorrência resulta em uma ordem de complexidade de tempo fatorial $O(n!)$.
+
+A complexidade de espaço, por outro lado, é linear, já que a profundidade recursiva em um determinado instante corresponde ao número de cidades visitadas nesse momento.
+
+\subsubsection{\emph{findMinDistance}}
+
+Essa função tem sua complexidade de tempo definida pela chamada a \emph{recursiveCall} e, por isso, é $O(n!)$. Quanto à complexidade espacial, por outro lado, predomina \emph{buildDistanceGraph}, com complexidade quadrática $O(n^2)$. 
+
+\subsection{Programa principal (\emph{main.c})}
+
+O programa principal apenas trata entrada e saída, gera as restrições e chama a função \emph{findMinDistance}. Por essa razão, predomina a complexidade dessa função, tanto em tempo quanto em espaço.
+
+\section{Análise experimental}
+
+
+
+\section{Conclusão}
 
 \end{document}

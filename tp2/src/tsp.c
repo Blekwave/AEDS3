@@ -14,7 +14,7 @@
  * @param  b Point B
  * @return   Distance between A and B.
  */
-double dist(Point a, Point b){
+static double dist(Point a, Point b){
     return sqrt(sq((long long)a.x - b.x) + sq((long long)a.y - b.y));
 }
 
@@ -25,7 +25,7 @@ double dist(Point a, Point b){
  * @param  num_cities Number of cities.
  * @return            Address to the newly created graph (must be deleted later)
  */
-AMG *buildDistanceGraph(Point *coords, int num_cities){
+static AMG *buildDistanceGraph(Point *coords, int num_cities){
     AMG *graph = amgInit(num_cities);
     int i, j;
     for (i = 0; i < num_cities; i++){
@@ -107,7 +107,7 @@ double findMinDistance(Point *coords, int num_cities,
     if (num_cities == 1)
         return 0;
     AMG *graph = buildDistanceGraph(coords, num_cities);
-    double min_dist = DBL_MAX;
+    double min_dist = INFINITY;
     if (*num_restrictions == 0){
         *num_restrictions = 1;
         restrictions[2] = 1 << 1; // 2 can only be accessed if 1 has already
@@ -115,7 +115,7 @@ double findMinDistance(Point *coords, int num_cities,
     }
     recursiveCall(graph, 1, num_cities, restrictions, 0, 0, &min_dist);
     amgDelete(graph);
-    if (min_dist == DBL_MAX)
+    if (min_dist == INFINITY)
         return -1;
     return min_dist;
 }
