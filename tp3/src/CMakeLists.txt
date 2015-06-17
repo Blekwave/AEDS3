@@ -1,7 +1,7 @@
-include_directories(${TP2_SOURCE_DIR}/src)
+include_directories(${TP3_SOURCE_DIR}/src)
 
-# add_library(amgraph amgraph.c)
+add_library(solver_bf solver_bf.c)
 
-add_executable(TP3 main.c)
+add_executable(BF main.c)
 
-target_link_libraries(TP3 m)
+target_link_libraries(BF solver_bf)
