@@ -13,9 +13,6 @@ int main(int argc, char const *argv[]){
         for (i = 0; i < seq_len; i++)
             scanf("%d", &seq[i]);
         
-        for (i = 0; i < seq_len; i++)
-            fprintf(stderr, "%d ", seq[i]);
-        
         int res = findBestSolution(seq, seq_len, init_val, limit_val);
         if (res >= win_thres){
             printf("S,%d\n", res);
