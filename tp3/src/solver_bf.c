@@ -14,6 +14,6 @@ static int recursiveCall(int *cur, int *max, int sum, int limit_val){
     return sub_val >= add_val ? sub_val : add_val;
 }
 
-int findBestSolution(int *seq, int seq_len, int init_val, int limit_val){
-    return recursiveCall(seq, seq + seq_len, init_val, limit_val);
+int findBestSolution(int *seq, int len, int init_val, int limit_val){
+    return recursiveCall(seq, seq + len, init_val, limit_val);
 }
