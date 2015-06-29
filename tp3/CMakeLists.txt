@@ -1,5 +1,5 @@
 # CMakeLists.txt
-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 project(TP3 C)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -std=c11 -g -pg")
