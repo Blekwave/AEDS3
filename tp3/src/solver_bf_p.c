@@ -57,13 +57,12 @@ static void *threadCall(void *data){
             }
         } else { // Queue is empty
             int cur_asleep = atomic_fetch_add(p->num_asleep, 1) + 1;
+            pthread_mutex_lock(p->sleep_mutex);
             if (cur_asleep == NUM_THREADS){
-                pthread_mutex_lock(p->sleep_mutex);
                 pthread_cond_broadcast(p->sleep_cond);
                 pthread_mutex_unlock(p->sleep_mutex);
                 break;
             } else {
-                pthread_mutex_lock(p->sleep_mutex);
                 pthread_cond_wait(p->sleep_cond, p->sleep_mutex);
                 pthread_mutex_unlock(p->sleep_mutex);
                 cur_asleep = atomic_load(p->num_asleep);
