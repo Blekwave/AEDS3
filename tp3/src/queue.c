@@ -22,6 +22,8 @@ static void qNodeDelete(struct queue_node *node){
 Queue *qInit(size_t data_size){
     Queue *new = malloc(sizeof(Queue));
     new->data_size = data_size;
+    pthread_mutex_init(&new->enqueue_mutex, NULL);
+    pthread_mutex_init(&new->dequeue_mutex, NULL);
     new->first = new->last = qNodeInit(0, NULL);
     new->first->next = NULL;
     return new;
@@ -30,20 +32,25 @@ Queue *qInit(size_t data_size){
 void qEnqueue(Queue *q, void *data){
     struct queue_node *new = qNodeInit(q->data_size, data);
     new->next = NULL;
+    pthread_mutex_lock(&q->enqueue_mutex);
     q->last->next = new;
     q->last = new;
+    pthread_mutex_unlock(&q->enqueue_mutex);
 }
 
 int qDequeue(Queue *q, void *output){
-    if (q->first != q->last){
-        struct queue_node *out = q->first->next;
-        memcpy(output, out->data, q->data_size);
-        if (q->last == out)
-            q->last = q->first;
-        q->first->next = out->next;
-        qNodeDelete(out);
+    struct queue_node *first, *next;
+    pthread_mutex_lock(&q->dequeue_mutex);
+    first = q->first;
+    next = first->next;
+    if (next != NULL){
+        q->first = next;
+        pthread_mutex_unlock(&q->dequeue_mutex);
+        memcpy(output, next->data, q->data_size);
+        qNodeDelete(first);
         return 0;
     }
+    pthread_mutex_unlock(&q->dequeue_mutex);
     return QUEUE_IS_EMPTY;
 }
 
