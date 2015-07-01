@@ -38,18 +38,25 @@ int findBestSolution(int *seq, int seq_len, int init_val, int limit_val){
     bool *prev = calloc(sizeof(bool), limit_val + 1);
     bool *cur = calloc(sizeof(bool), limit_val + 1);
     prev[init_val] = true;
+
+    struct args_next_state args[NUM_THREADS];
     int i, j;
+    for (i = 0; i < NUM_THREADS; i++){
+        args[i] = (struct args_next_state){
+            .begin = (i * limit_val / NUM_THREADS),
+            .end = ((i + 1) * limit_val / NUM_THREADS),
+            .limit_val = limit_val
+        };
+    }
+    args[NUM_THREADS - 1].end++; // Game state arrays have size limit_val + 1
     for (i = 0; i < seq_len; i++){
         for (j = 0; j < NUM_THREADS; j++){
-            struct args_next_state args = {
-                    .begin = (j * limit_val / NUM_THREADS),
-                    .end = ((j + 1) * limit_val / NUM_THREADS),
-                    .item = seq[i],
-                    .limit_val = limit_val,
-                    .prev = prev,
-                    .cur = cur
+            args[j] = (struct args_next_state){
+                .item = seq[i],
+                .prev = prev,
+                .cur = cur
             };
-            pthread_create(&threads[j], &attr, processNextState, &args);
+            pthread_create(&threads[j], &attr, processNextState, &args[j]);
         }
         for (j = 0; j < NUM_THREADS; j++){
             pthread_join(threads[i], NULL);
