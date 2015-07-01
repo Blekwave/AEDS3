@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include "solver.h"
 
+/**
+ * The main function handles IO, calls the solver library and figures out
+ * whether or not the player can win, based on the maximum valid amount of
+ * points and on the win threshold.
+ */
 int main(int argc, char const *argv[]){
     int cases;
     scanf("%d", &cases);

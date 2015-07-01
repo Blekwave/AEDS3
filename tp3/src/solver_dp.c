@@ -2,6 +2,19 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+/**
+ * Function that computes the best possible result in a game, based on the
+ * starting value, the sequence of numbers and the upper limit.
+ * @param  seq       Integer array which contains the numbers to be added or
+ *                   subtracted.
+ * @param  len       Length of the sequence.
+ * @param  init_val  Initial value.
+ * @param  limit_val Maximum value that can be reached without losing.
+ * @return           Maximum amount of points that can be obtained by adding
+ *                   or subtracting the numbers in the given sequence. If no
+ *                   combination of plays can finish the game without breaking
+ *                   the limit, -1 is returned.
+ */
 int findBestSolution(int *seq, int seq_len, int init_val, int limit_val){
     bool *prev = calloc(sizeof(bool), limit_val + 1);
     bool *cur = calloc(sizeof(bool), limit_val + 1);
