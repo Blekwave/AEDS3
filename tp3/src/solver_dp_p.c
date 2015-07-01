@@ -51,11 +51,9 @@ int findBestSolution(int *seq, int seq_len, int init_val, int limit_val){
     args[NUM_THREADS - 1].end++; // Game state arrays have size limit_val + 1
     for (i = 0; i < seq_len; i++){
         for (j = 0; j < NUM_THREADS; j++){
-            args[j] = (struct args_next_state){
-                .item = seq[i],
-                .prev = prev,
-                .cur = cur
-            };
+            args[j].item = seq[i];
+            args[j].prev = prev[i];
+            args[j].cur = cur[i];
             pthread_create(&threads[j], &attr, processNextState, &args[j]);
         }
         for (j = 0; j < NUM_THREADS; j++){
