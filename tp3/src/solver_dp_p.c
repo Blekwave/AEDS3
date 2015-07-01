@@ -41,15 +41,15 @@ int findBestSolution(int *seq, int seq_len, int init_val, int limit_val){
     int i, j;
     for (i = 0; i < seq_len; i++){
         for (j = 0; j < NUM_THREADS; j++){
-            pthread_create(&threads[j], &attr, processNextState,
-                &(struct args_next_state){
+            struct args_next_state args = {
                     .begin = (j * limit_val / NUM_THREADS),
                     .end = ((j + 1) * limit_val / NUM_THREADS),
                     .item = seq[i],
                     .limit_val = limit_val,
                     .prev = prev,
                     .cur = cur
-                });
+            };
+            pthread_create(&threads[j], &attr, processNextState, &args);
         }
         for (j = 0; j < NUM_THREADS; j++){
             pthread_join(threads[i], NULL);

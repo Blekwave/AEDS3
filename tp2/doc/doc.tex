@@ -4,8 +4,8 @@
 \usepackage{fullpage}
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage[portuguese]{babel}
 \usepackage[]{amsmath}
-\floatstyle{boxed}
 \restylefloat{figure}
 
 \usepackage[adobe-utopia]{mathdesign}
@@ -24,9 +24,15 @@
 Algoritmos e Estruturas de Dados III - 1º Semestre de 2015
 \end{center}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.5]{graphs/pcv.pdf}
+    \label{fig:replselection}
+\end{figure}
+
 \section{Introdução}
 
-A computação facilita a solução de vários problemas por meio de algoritmos. A ideia é que esses algoritmos possam explorar propriedades do problema para que se possa encontrar, eficientemente, a solução. No entanto, há problemas para os quais até hoje não foi possível encontrar procedimentos eficazes, devido à falta de propriedades úteis evidentes. Em particular, os problemas NP-completo são problemas para os quais grande parte da comunidade acredita não haver solução polinomial, o que significa que é necessário optar por uma solução sub-ótima ou lidar com algoritmos exponenciais, que rapidamente se tornam inviáveis conforme cresce o tamanho da entrada.
+A computação facilita a solução de vários problemas por meio de algoritmos. A ideia é que esses algoritmos sejam capazes de explorar propriedades do problema para que se possa encontrar, eficientemente, a solução. No entanto, há problemas para os quais até hoje não foi possível encontrar procedimentos eficazes, devido à falta de propriedades úteis evidentes. Em particular, a classe de problemas NP-completo contém problemas para os quais grande parte da comunidade acredita não haver solução polinomial. Isso significa que é necessário optar por uma solução sub-ótima ou lidar com algoritmos exponenciais, que rapidamente se tornam inviáveis conforme cresce o tamanho da entrada.
 
 Neste trabalho, o cenário envolve uma empresa de transporte, que deve, partindo de uma cidade inicial, visitar todas as cidades e retornar ao ponto de partida no menor tempo possível. Além disso, há um conjunto de restrições de ordem de visita, que podem mudar a solução obtida ou, até mesmo, inviabilizar a existência de uma solução. Esse problema é uma variação de um problema notoriamente difícil. Posteriormente, será provado que não se conhece um algoritmo polinomial para esse problema, visto que sua versão de decisão é NP-Completa.
 
@@ -46,7 +52,11 @@ A entrada do problema tratado neste trabalho é composta por um conjunto de $n$ 
 
 Por ser um problema de otimização, o cenário da empresa de transportes apresentado neste trabalho não é NP-completo, mas sim NP-difícil. Isso ocorre porque, nos problemas NP-completo, é necessário que seja possível verificar a saída do problema em tempo polinomial. Os problemas de otimização requerem que se obtenha o melhor resultado possível, e verificar se um resultado é o melhor possível consiste em resolver o problema novamente (assume-se que isso é impossível em tempo polinomial para problemas NP-difícil). No entanto, é possível formalizar o problema apresentado como um problema de decisão e, então, provar que essa versão dele é um problema NP-completo. Uma forma de realizar tal reformulação é a seguinte:
 
-Dados uma lista de $n$ cidades, as distâncias entre essas cidades, um limite superior $\in \mathbb{R}_{+}$ e um conjunto de restrições de ordem de acesso, existe uma rota que visita todas as cidades exatamente uma vez e, então, retorna à cidade original sem violar nenhuma das restrições propostas, cuja distância é menor que $k$?
+``Dados uma lista de $n$ cidades, as distâncias entre essas cidades, um limite superior $\in \mathbb{R}_{+}$ e um conjunto de restrições de ordem de acesso, existe uma rota que visita todas as cidades exatamente uma vez e, então, retorna à cidade original sem violar nenhuma das restrições propostas, cuja distância é menor que $k$?''
+
+\subsubsection{Configurações triviais do problema de decisão}
+
+Essa versão de decisão do problema permite que, para algumas configurações particulares, a resposta seja obtida trivialmente. Caso as restrições formem ciclos, é impossível que haja circuitos válidos nesse grafo, visto que as restrições nunca permitirão o acesso a nenhum dos vértices presentes no ciclo. Além disso, o valor assumido por $k$ pode, também, trivializar o problema: caso esse valor seja menor do que a soma das $n + 1$ menores arestas, não existe caminho válido. Similarmente, caso $k$ seja maior do que as $k + 1$ maiores arestas e haja no máximo uma restrição, é possível dizer com certeza que existe tal rota.
 
 \subsection{Prova de NP-completude}
 
@@ -89,6 +99,52 @@ Primeiramente, é preciso provar que o problema é \textbf{NP}. Isso pode ser fe
 Considerando as operações de checar se uma cidade já foi visitada e a conferência das restrições de acesso como $O(n)$, o algoritmo de verificação apresentado acima tem ordem de complexidade $O(n^2)$. Portanto, o problema em questão é NP.
 
 \subsubsection{Prova de NP-dificuldade: redução polinomial}
+
+A prova de que o problema proposto no trabalho é NP-difícil pode ser feita através de redução polinomial do Problema do Circuito Hamiltoniano (PCH), um problema NP-completo (e, consequentemente, NP-difícil) conhecido. O enunciado do PCH é: ``dado um grafo $G(V,A)$, é possível estabelecer um circuito nesse grafo que visite todos os vértices apenas uma vez e retorne ao vértice original?''
+
+No caso, é preciso transformar a entrada de uma instância genérica do PCH na entrada do PCV com restrições, que é o problema que se quer provar NP-completo. O grafo de entrada do PCV com restrições é um grafo completo, já que existe distância euclidiana entre todas as cidades. A transformação a ser realizada envolve um novo grafo $H(V,A')$, baseado no grafo $G(V,A)$, e funciona da seguinte maneira:
+
+\[
+    A'_{i,j}=\begin{cases}
+        0, & \text{se existe $A_{i,j}$.}\\
+        1, & \text{caso contrário.} 
+    \end{cases}
+\]
+
+O grafo $H(V,A')$ pode ser gerado de maneira simples em tempo polinomial. O conjunto de restrições $R$ é vazio. Com isso, resta provar que existe uma rota válida para o PCV com restrições com grafo $H(V,A')$ e conjunto de restrições $R$ de tamanho 0 \textbf{se e somente se} existe um circuito hamiltoniano em $G(V,A)$.
+
+Se o grafo $G(V,A)$ apresenta um circuito hamiltoniano $C$, isso significa que cada aresta em $C$ existe em $A$, e, por isso, tem custo 0 em $A'$. Por essa razão, $C$ também é uma rota válida em $H(V,A')$ com custo zero. Similarmente, se $D$ é uma rota válida em $H(V,A')$ e tem custo 0, isso significa que todas as suas arestas estão presentes em $A$ (caso contrário, o custo de $D$ seria maior do que zero), e, por isso, $D$ é um circuito hamiltoniano válido em $G(V,A)$.
+
+\subsection{Podas utilizadas}
+
+Para evitar a enumeração de todas as permutações de vértices possíveis, foram utilizadas propriedades do problema para identificar pontos na árvore de decisão a partir das quais todas as possibilidades são infrutíferas. Com isso, é possível interromper imediatamente a recursão e evitar muitos passos desnecessários. Essas podas não trazem um ganho na ordem de complexidade do problema, mas elas permitem que entradas maiores passem a ser tratáveis.
+
+Há dois tipos de podas: podas locais são aquelas que decidem quando interromper a recursão apenas com base na configuração local do problema, enquanto as podas globais utilizam informações obtidas em iterações anteriores para constatar que a solução para o problema não está nesse galho da árvore de recursão, muitas vezes através de variáveis com escopo global.
+
+\subsubsection{Unicidade}
+
+Essa poda local é simples e vem naturalmente na implementação do algoritmo para a solução do problema. Ela se baseia no fato de que vértices não podem se repetir na rota a ser tomada, o que significa que caminhos que visitam a mesma cidade mais de uma vez não precisam ser explorados. Ela se aplica para todas as configurações do problema, com a exceção única do caso trivial em que só existe uma cidade. Algoritmos que não aplicam esse princípio operam em complexidade de tempo $O(n^n)$, ao invés de $O(n!)$, o que significa que essa poda é de extrema importância.
+
+\subsubsection{Restrições}
+
+Ao invés de conferir as restrições somente quando é obtido um caminho completo de tamanho $n+1$, é possível ganhar eficiência realizando uma poda local que se baseia na conferência das restrições a cada cidade visitada. Isso faz com que as sub-árvores nas quais restrições são violadas sejam completamente ignoradas. Quanto mais restrições houver, mais eficiente essa poda é. Ela não se aplica no caso em que não há restrições.
+
+\subsubsection{Simetria}
+
+A poda local de simetria é uma poda para o PCV tradicional em que se aproveita o fato de que uma rota é equivalente à sua rota inversa, e, para obter o resultado ótimo, basta encontrar uma dessas duas rotas. Dessa forma, é imposta uma restrição de ordem de acesso, que necessariamente invalida uma das rotas, mas mantém a outra. No problema deste trabalho, porém, essa poda não é válida caso haja restrições, visto que adicionar uma restrição caso já existam restrições pode fazer com que a rota ótima nunca seja encontrada. Dessa forma, essa poda somente se aplica para o caso em que não há restrições. Apesar da sua limitação, a implementação dessa poda é muito simples (basta adicionar uma restrição arbitrária caso não haja restrições) e ela se aplica justamente no caso de pior performance possível, já que o desempenho do programa é melhor quanto mais restrições há.
+
+\subsubsection{Limite superior}
+
+A poda global utilizada nesse trabalho é realizada através da manutenção do valor do menor caminho completo encontrado até o momento. Devido ao fato de que não há arestas negativas, se uma rota parcial é maior do que a menor rota completa encontrada até o momento, nenhuma das rotas que podem ser criadas adicionando arestas a essa rota pode ser melhor do que o mínimo encontrado. Por isso, é possível descartar a sub-árvore encontrada até esse ponto.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.75]{graphs/enum_tree.pdf}
+    \caption{Árvore de enumeração de possibilidades para o caso de quatro vértices, sem restrições, demonstrando a podas de limite superior. Leitura da esquerda para a direita.}
+    \label{fig:limsup}
+\end{figure}
+
+A eficácia dessa poda depende da configuração do grafo de distâncias e na ordem de enumeração dos vértices. O desempenho da poda diminui conforme a configuração das rotas completas se aproxima da ordem decrescente e do final da árvore de enumeração. Por outro lado, caso uma rota curta seja encontrada cedo no procedimento, é possível economizar muitas iterações. Essa poda não se aplica caso não haja rotas válidas.
 
 \section{Implementação}
 
@@ -168,9 +224,9 @@ A análise de complexidade assintótica da biblioteca responsável pela soluçã
 
 Esta função é responsável pela criação do grafo de distâncias com base no vetor de coordenadas. O número de arestas do grafo equivale a $C_{n,2}$.
 
-\[
+\begin{equation}
     O(C_{n,2}) = O(\frac{n*(n-1)}{2}) = O(n^2)
-\]
+\end{equation}
 
 Sua complexidade de espaço corresponde ao gasto da função \emph{amgInit}. Por isso, essa função tem complexidade espacial $O(n^2)$.
 
@@ -178,12 +234,12 @@ Sua complexidade de espaço corresponde ao gasto da função \emph{amgInit}. Por
 
 Nesta função, o fator mais relevante para a análise de complexidade assintótica é a chamada recursiva realizada. É possível expressar essa relação como uma relação de recorrência. Considerando $r$ como o número de cidades restantes a serem visitadas, esta função tem sua recorrência representada pela função $T(r)$, onde:
 
-\[
+\begin{equation}
     T(r)=\begin{cases}
         0, & \text{se $r = 0$.}\\
         rT(r-1), & \text{caso contrário.} 
     \end{cases}
-\]
+\end{equation}
 
 A expansão em termos dessa recorrência resulta em uma ordem de complexidade de tempo fatorial $O(n!)$.
 
@@ -199,8 +255,35 @@ O programa principal apenas trata entrada e saída, gera as restrições e chama
 
 \section{Análise experimental}
 
+Os testes realizados analisaram o fator mais relevante e mensurável para o desempenho do programa: o número de cidades da entrada. Há, também, outros fatores que podem influenciar no desempenho, como, por exemplo, as restrições impostas. No entanto, esses fatores são mais difíceis de avaliar, visto que eles não dependem simplesmente de um valor numérico. No caso das restrições, não só o número de restrições afeta o tempo de execução do programa, mas também a configuração das mesmas. Restrições simétricas, por exemplo, podem causar grande redução no tempo de execução do programa, já que isso caracteriza um \emph{deadlock}. Por outro lado, um grande número de restrições partindo de um mesmo vértice podem ter impacto muito menor. Isso também depende da ordem de avaliação dos vértices no programa, que é completamente arbitrária.
 
+Todos os testes foram realizados dez vezes cada em uma máquina com as seguintes especificações:
+
+\begin{itemize}
+    \item OS: Elementary OS x64 (distribuição baseada no Ubuntu 14.04 LTS);
+    \item CPU: Intel Core i7 2600k @ 3.40GHz;
+    \item RAM: 4 x 4GB DDR3 1.333MHz (16GB).
+\end{itemize}
+
+A medição dos tempos de execução foi feita através do comando \emph{time}, no terminal. Todos os testes foram realizados no dia 14 de junho de 2015.
+
+\subsection{Resultados}
+
+Nesta bateria de testes, o programa recebeu como entrada para cada caso de testes um conjunto de $n$ cidades com coordenadas aleatórias inteiras de 0 a $10^9$, sem nenhuma restrição. Houve casos de testes com 10, 11, 12, 13, 14, 15, 16 e 17 cidades. Os resultados estão disponíveis no gráfico abaixo:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.90\textwidth]{exp/resultados_cropped.pdf}
+    \caption{Gráfico do tempo de execução dos testes (em segundos) em função do número de cidades, em escala logarítmica (base 10).}
+    \label{fig:numcidades}
+\end{figure}
+
+O comportamento desse teste está de acordo com a ordem de complexidade do programa. Na seção de análise de complexidade assintótica, constatou-se o comportamento exponencial do tempo de execução do programa conforme o número de cidades aumenta. A linearidade aparente do gráfico em escala exponencial confirma, de fato, a exponencialidade em função do número de cidades da complexidade de tempo do programa. As barras de erro mostram o maior e o menor tempo de execução obtidos para cada caso de teste.
 
 \section{Conclusão}
+
+Nesse trabalho, foi abordado um problema notoriamente difícil. Como manter a otimalidade era necessário, a solução proposta, apesar de todas as otimizações realizadas, não é capaz de tratar entradas grandes. Foi provado, porém, que se trata de um problema NP-completo, e, por isso, acredita-se não ser possível obter um algoritmo polinomial que preserve a otimalidade das soluções obtidas. Podas e otimizações foram realizadas para tratar entradas um pouco maiores, de forma a cumprir os requisitos máximos propostos pelo enunciado do trabalho. Também foram feitas análises de complexidade assintótica e experimental, que revelaram, novamente, a exponencialidade do problema.
+
+Existem algoritmos que são capazes de resolver o problema para entradas ainda maiores. A otimização de problemas NP-completos é um tema muito frequentemente abordado na ciência da computação. Existem relatos de soluções capazes de tratar entradas que alcançam as dezenas de milhares de vértices. No entanto, tais métodos fogem do escopo do trabalho e da matéria abordada, além de serem desnecessárias para a entrada máxima necessária, de 22 vértices.
 
 \end{document}
