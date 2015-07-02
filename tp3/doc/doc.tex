@@ -1,0 +1,67 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[ruled]{algorithm2e}
+\usepackage{fullpage}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[portuguese]{babel}
+\usepackage[]{amsmath}
+\restylefloat{figure}
+
+\usepackage[adobe-utopia]{mathdesign}
+\usepackage[T1]{fontenc}
+
+\DeclareGraphicsExtensions{.jpg,.pdf}
+
+\numberwithin{equation}{section}
+
+\title{TP3: Beating the house!}
+\author{Victor Pires Diniz}
+
+\begin{document}
+\maketitle
+\begin{center}
+Algoritmos e Estruturas de Dados III - 1º Semestre de 2015
+\end{center}
+
+\section{Introdução}
+
+Algoritmos de força bruta são capazes de alcançar soluções válidas para grande parte dos problemas na ciência da computação. No entanto, esse tipo de solução se torna rapidamente custosa, conforme cresce o tamanho da entrada. Por essa razão, é geralmente interessante procurar por propriedades do problema que permitam a utilização de algoritmos mais específicos e eficientes, através da redução do espaço de busca de solução.
+
+O cenário do trabalho envolve um jogo de cassino no qual o jogador deve tomar uma série de decisões, com pleno conhecimento do cenário do jogo, de forma a otimizar o seu resultado final. De acordo com a história da especificação, o cassino assume que só é possível obter a solução ótima do problema através de força bruta e que, por isso, os jogadores não seriam capazes de vencer com frequência. No entanto, isso não é verdade: o problema de otimização do jogo apresenta propriedades que permitem a aplicação de um algoritmo muito mais eficiente.
+
+São propostos três algoritmos, com desempenhos crescentes. Inicialmente, é utilizado um algoritmo de força bruta, com desempenho ruim para entradas grandes. Posteriormente, é proposta uma solução utilizando programação dinâmica, aproveitando as propriedades do problema. Essa solução apresenta desempenho muito melhor do que a inicialmente obtida, sendo capaz de obter resposta rapidamente para todas as configurações de entrada. Como se não bastasse, foi possível paralelizar esse algoritmo de programação dinâmica, obtendo resultados ainda mais interessantes.
+
+\section{Resolução do problema}
+
+O problema do trabalho envolve a otimização das jogadas de um jogo de azar, no qual o jogador recebe uma sequência $S$ de $n$ números inteiros, um valor inicial $I$, um limite $L$ e um patamar de vitória $V$. Esse jogador tem acesso a todos esses valores e deve decidir entre jogar ou não jogar nessa rodada. Caso ele escolha jogar, ele deve seguir a sequência na ordem apresentada, e, para cada número, escolher somá-lo ou subtraí-lo ao valor atual. Se esse valor ultrapassar, a qualquer momento, o limite, ou descer abaixo de zero, o jogador perde imediatamente. Ao final da sequência, se o valor obtido for maior ou igual ao patamar de vitória, o jogador vence. É preciso, portanto, obter a combinação de adições e subtrações que maximiza o valor final a ser obtido. É possível que não haja combinações que permitam a vitória, devido à configuração da entrada.
+
+(ilustração do jogo)
+
+A saída do problema pede não só se é possível ou não vencer, mas também o maior valor que pode ser obtido, independentemente do resultado do jogo. No caso, apenas valores obtidos ao final da sequência se aplicam. Se não é possível chegar ao final da sequência em uma certa configuração, o programa deve imprimir $-1$ como o valor obtido.
+
+\subsection{Força bruta}
+
+O algoritmo de força bruta para esse problema é bastante simples quando feito recursivamente. Partindo do valor inicial, o algoritmo tenta somar e subtrair o próximo valor da sequência ao montante. Caso o valor obtido nessas operações seja válido dentro do intervalo $[0,L]$, são realizadas novas chamadas recursivas com os novos valores como montantes que tentarão adicionar ou subtrair o próximo item da sequência. Caso alguma combinação de adições e subtrações alcance o final da sequência, o valor final é comparado com o melhor resultado obtido até então. É utilizada uma variável global auxiliar para armazenar o maior valor final obtido até o momento.
+
+(adicionar pseudocódigo aqui)
+
+\subsection{Algoritmo guloso ou programação dinâmica?}
+
+A especificação do trabalho afirma que existe uma maneira eficiente de resolver esse problema utilizando apenas um desses paradigmas. A programação dinâmica e o algoritmo guloso possuem um ponto em comum: ambos dependem da existência de uma subestrutura ótima no problema apresentado. No entanto, eles diferem em como agir em cada fase do problema. Enquanto um algoritmo guloso nunca volta atrás e tenta agir com base em uma decisão local, um algoritmo de programação dinâmica guarda as computações válidas anteriores, caso a melhor opção até então não seja a mais viável para os estados seguintes da entrada.
+
+Com base nisso, é relativamente simples provar que o algoritmo guloso não é ideal para este problema. A melhor combinação até um certo ponto pode não ser a combinação que vai gerar o resultado ótimo para o próximo item da sequência, devido à existência do limite superior. A entrada $S = \{1,2\}, L = 2, I = 1$ é um bom contra-exemplo para a escolha gulosa. Simplesmente somar o maior valor e subtrair quando não for possível somar gera como resultado $0$, mas a solução ótima no caso é subtrair primeiro e somar depois, resultando em $2$. Como se não bastasse, existem situações nas quais o algoritmo guloso falha completamente em obter uma solução. Por exemplo, $S = \{2, 19\}, L = 30, I = 13$: somar o $2$ faz com que não seja possível jogar no segundo turno, levando à derrota imediata.
+
+\subsection*{Programaçao dinâmica}
+
+Como mencionado, a chave para uma solução de programação dinâmica para esse problema envolve guardar os valores que podem ser obtidos no estado anterior. O que torna o algoritmo de força bruta problemático é o cálculo repetido dos mesmos subproblemas. O armazenamento das somas válidas anteriores permite garantir a unicidade de cada valor e evitar, dessa maneira, a exponencialidade.
+
+(equação de recorrência)
+
+(descrição da recorrência)
+
+(pseudocódigo)
+
+A implementação disso foi feita através de dois vetores de valores booleanos de tamanho $L + 1$ (de $0$ a $L$): um para o estado anterior e outro para o novo estado (serão chamados de $A$ e $N$, respectivamente). Se $A[k]$ é \emph{true}, isso significa que $k$ é um valor que pode ser obtido com a adição ou subtração dos valores da sequência até o estado anterior sem sair do intervalo $[0,L]$ em momento algum. Portanto, o algoritmo se torna bastante simples: para cada item da sequência, itera-se por $A$. Para cada $A[k]$ com valor \emph{true}, o próximo item da sequência, $p$, é somado e subtraído a $k$. $N$ inicia a iteração como \emph{false} para todos os índices. $N[k+p]$ e $N[k-p]$ serão \emph{true} desde que $k+p$ e $k-p$ pertençam ao intervalo $[0,L]$, respectivamente. Ao final da sequência, o maior valor que pode ser obtido é o maior valor de $k$ tal que $A[k]=\text{\emph{true}}$, $0 \le k \le L$ ou $-1$, caso $A[k]$ seja \emph{false} para todo $k$.
+
+\end{document}

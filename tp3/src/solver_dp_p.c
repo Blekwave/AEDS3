@@ -97,6 +97,7 @@ int findBestSolution(int *seq, int seq_len, int init_val, int limit_val){
     }
     args[NUM_THREADS - 1].end++; // Game state arrays have size limit_val + 1
 
+    // Iterates through the sequence of numbers
     for (i = 0; i < seq_len; i++){
         for (j = 0; j < NUM_THREADS; j++){
             args[j].item = seq[i]; // Current item to be added or subtracted
