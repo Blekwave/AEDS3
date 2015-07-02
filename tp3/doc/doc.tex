@@ -153,12 +153,26 @@ Esse algoritmo é muito similar ao algoritmo regular de programação dinâmica,
 
 \section{Análise experimental}
 
+Nessa seção, são realizados dois testes. O primeiro deles realiza uma comparação de desempenho entre as versões de força bruta e programação dinâmica, evidenciando a diferença entre a complexidade assintótica desses programas conforme cresce o tamanho da sequência. O segundo teste compara as versões sequencial e paralela do algoritmo de programação dinâmica em função do número de threads alocados para o programa.
 
+\subsection{Ambiente e metodologia}
+
+Todas as instâncias de teste foram executadas dez vezes cada em uma máquina com as seguintes especificações:
 
 \begin{itemize}
     \item OS: Ubuntu 12.04 LTS x64;
     \item CPU: Intel Core i7 2600 @ 3.40GHz;
     \item RAM: 16GB.
 \end{itemize}
+
+Os testes foram realizados no dia 2 de julho de 2015. A medição do tempo de execução de cada instância de teste foi realizada através do comando \emph{time}, no terminal.
+
+\subsection{Teste 1: força bruta vs. programação dinâmica}
+
+\subsection{Teste 2: sequencial vs. paralelo}
+
+\section{Conclusão}
+
+Nesse trabalho, foi solucionado um mesmo problema de diversas formas, de forma a relevar 
 
 \end{document}
