@@ -30,7 +30,7 @@ Algoritmos de força bruta são capazes de alcançar soluções válidas para gr
 
 O cenário do trabalho envolve um jogo de cassino no qual o jogador deve tomar uma série de decisões, com pleno conhecimento do cenário do jogo, de forma a otimizar o seu resultado final. De acordo com a história da especificação, o cassino assume que só é possível obter a solução ótima do problema através de força bruta e que, por isso, os jogadores não seriam capazes de vencer com frequência. No entanto, isso não é verdade: o problema de otimização do jogo apresenta propriedades que permitem a aplicação de um algoritmo muito mais eficiente.
 
-São propostos três algoritmos, com desempenhos crescentes. Inicialmente, é utilizado um algoritmo de força bruta, com desempenho ruim para entradas grandes. Posteriormente, é proposta uma solução utilizando programação dinâmica, aproveitando as propriedades do problema. Essa solução apresenta desempenho muito melhor do que a inicialmente obtida, sendo capaz de obter resposta rapidamente para todas as configurações de entrada. Como se não bastasse, foi possível paralelizar esse algoritmo de programação dinâmica, obtendo resultados ainda mais interessantes.
+São propostos três algoritmos, com desempenhos crescentes. Inicialmente, é utilizado um algoritmo de força bruta, com desempenho ruim para entradas grandes. Posteriormente, é proposta uma solução utilizando programação dinâmica, aproveitando as propriedades do problema. Essa solução apresenta desempenho muito melhor do que a inicialmente obtida, sendo capaz de obter resposta rapidamente para todas as configurações de entrada. Por fim, é paralelizado o algoritmo de programação dinâmica, obtendo-se performance ainda melhor.
 
 \section{Resolução do problema}
 
@@ -40,11 +40,40 @@ O problema do trabalho envolve a otimização das jogadas de um jogo de azar, no
 
 A saída do problema pede não só se é possível ou não vencer, mas também o maior valor que pode ser obtido, independentemente do resultado do jogo. No caso, apenas valores obtidos ao final da sequência se aplicam. Se não é possível chegar ao final da sequência em uma certa configuração, o programa deve imprimir $-1$ como o valor obtido.
 
-\subsection{Força bruta}
+\subsection{Força bruta (\emph{solver\_bf.c})}
 
 O algoritmo de força bruta para esse problema é bastante simples quando feito recursivamente. Partindo do valor inicial, o algoritmo tenta somar e subtrair o próximo valor da sequência ao montante. Caso o valor obtido nessas operações seja válido dentro do intervalo $[0,L]$, são realizadas novas chamadas recursivas com os novos valores como montantes que tentarão adicionar ou subtrair o próximo item da sequência. Caso alguma combinação de adições e subtrações alcance o final da sequência, o valor final é comparado com o melhor resultado obtido até então. É utilizada uma variável global auxiliar para armazenar o maior valor final obtido até o momento.
 
-(adicionar pseudocódigo aqui)
+\begin{function}[H]
+    % \DontPrintSemicolon
+    \caption{recursiveCall($S$, $i$, $n$, $s$, $L$, \&$B$)}
+
+    \KwData{Sequência $S$, posição na sequência $i$, tamanho da sequência $n$, soma parcial $s$, limite superior $L$, melhor valor obtido (global) $B$}
+    \KwResult{Ao final, $B$ possuirá o maior valor que pode ser obtido com a sequência fornecida. Caso não haja valores finais válidos, $B$ não é definido nesse procedimento, mantendo seu valor inicial, que é $-1$.}
+    \BlankLine
+
+    \If{$s + S[i] \le L$}{
+    	\eIf{$i + 1 = n$}{
+    		\If{$s + S[i] > B$}{
+    			$B \gets s + S[i]$\;
+    		}
+    	}{
+    		\emph{recursiveCall}($S$, $i + 1$, $n$, $s + S[i]$, $L$, \&$B$);
+    	}
+    }
+
+    \If{$s - S[i] \ge 0$}{
+    	\eIf{$i + 1 = n$}{
+    		\If{$s - S[i] > B$}{
+    			$B \gets s - S[i]$\;
+    		}
+    	}{
+    		\emph{recursiveCall}($S$, $i + 1$, $n$, $s - S[i]$, $L$, \&$B$)\;
+    	}
+    }
+\end{function}
+
+A função acima é chamada inicialmente para o primeiro item da sequência, com a soma inicial sendo o valor inicial $I$.
 
 \subsection{Algoritmo guloso ou programação dinâmica?}
 
@@ -52,16 +81,84 @@ A especificação do trabalho afirma que existe uma maneira eficiente de resolve
 
 Com base nisso, é relativamente simples provar que o algoritmo guloso não é ideal para este problema. A melhor combinação até um certo ponto pode não ser a combinação que vai gerar o resultado ótimo para o próximo item da sequência, devido à existência do limite superior. A entrada $S = \{1,2\}, L = 2, I = 1$ é um bom contra-exemplo para a escolha gulosa. Simplesmente somar o maior valor e subtrair quando não for possível somar gera como resultado $0$, mas a solução ótima no caso é subtrair primeiro e somar depois, resultando em $2$. Como se não bastasse, existem situações nas quais o algoritmo guloso falha completamente em obter uma solução. Por exemplo, $S = \{2, 19\}, L = 30, I = 13$: somar o $2$ faz com que não seja possível jogar no segundo turno, levando à derrota imediata.
 
-\subsection*{Programaçao dinâmica}
+\subsection{Programaçao dinâmica (\emph{solver\_dp.c})}
 
 Como mencionado, a chave para uma solução de programação dinâmica para esse problema envolve guardar os valores que podem ser obtidos no estado anterior. O que torna o algoritmo de força bruta problemático é o cálculo repetido dos mesmos subproblemas. O armazenamento das somas válidas anteriores permite garantir a unicidade de cada valor e evitar, dessa maneira, a exponencialidade.
 
-(equação de recorrência)
+\begin{equation}
+    V[i]=\begin{cases}
+        \{I\}, & \text{se $i = -1$;}\\
+        A \cup B \vert \begin{array}{ll}
+        	A = a + S[i] \vert \forall a \in V[i-1], a + S[i] \le L \\
+        	B = b - S[i] \vert \forall b \in V[i-1], b - S[i] \ge 0
+        \end{array}, & \text{caso contrário.}
+    \end{cases}
+\end{equation}
 
-(descrição da recorrência)
+A equação de recorrência acima representa o conjunto de resultados em cada estado do procedimento. O caso base da recorrência significa que, antes dos itens da sequência serem levados em consideração, o único valor válido é o valor inicial. A recorrência em si tenta somar ou subtrair o item da sequência aos valores válidos do estado anterior. O maior resultado possível no jogo após o estágio $i$ da sequência é simplesmente o maior valor de $V[i]$.
 
-(pseudocódigo)
+\begin{algorithm}[H]
+    % \DontPrintSemicolon
+    \caption{Algoritmo de programação dinâmica}
 
-A implementação disso foi feita através de dois vetores de valores booleanos de tamanho $L + 1$ (de $0$ a $L$): um para o estado anterior e outro para o novo estado (serão chamados de $A$ e $N$, respectivamente). Se $A[k]$ é \emph{true}, isso significa que $k$ é um valor que pode ser obtido com a adição ou subtração dos valores da sequência até o estado anterior sem sair do intervalo $[0,L]$ em momento algum. Portanto, o algoritmo se torna bastante simples: para cada item da sequência, itera-se por $A$. Para cada $A[k]$ com valor \emph{true}, o próximo item da sequência, $p$, é somado e subtraído a $k$. $N$ inicia a iteração como \emph{false} para todos os índices. $N[k+p]$ e $N[k-p]$ serão \emph{true} desde que $k+p$ e $k-p$ pertençam ao intervalo $[0,L]$, respectivamente. Ao final da sequência, o maior valor que pode ser obtido é o maior valor de $k$ tal que $A[k]=\text{\emph{true}}$, $0 \le k \le L$ ou $-1$, caso $A[k]$ seja \emph{false} para todo $k$.
+    \SetKwInOut{Input}{Entrada}
+    \SetKwInOut{Output}{Saída}
+
+    \Input{Sequência $S$, tamanho da sequência $n$, valor inicial $I$, limite superior $L$}
+    \Output{Melhor resultado possível com a configuração apresentada na entrada, $-1$ caso não haja resultados válidos.}
+    \BlankLine
+    $A \gets \{I\}$\;
+    \ForEach{$p \in S$}{
+        $N \gets \emptyset$\;
+    	\ForEach{$k \in A$}{
+			\If{$k + p \le L$}{
+				Insere $k + p$ em $N$\;
+			}
+			\If{$k - p \ge 0$}{
+				Insere $k - p$ em $N$\;
+			}
+    	}
+    	$A \gets N$\;
+    }
+    \eIf{$A \neq \emptyset$}{
+        \textbf{return} \emph{max($A$)}\;
+    }{
+        \textbf{return} $-1$\;
+    }
+\end{algorithm}
+
+A implementação dos conjuntos do algoritmo acima foi feita através de dois vetores de valores booleanos de tamanho $L + 1$ (de $0$ a $L$): um para o estado anterior e outro para o novo estado (serão chamados de $A$ e $N$, respectivamente). Se $A[k]$ é \emph{true}, isso significa que $k$ é um valor que pode ser obtido com a adição ou subtração dos valores da sequência até o estado anterior sem sair do intervalo $[0,L]$ em momento algum. Portanto, o algoritmo se torna bastante simples: para cada item da sequência, itera-se por $A$. Para cada $A[k]$ com valor \emph{true}, o próximo item da sequência, $p$, é somado e subtraído a $k$. $N$ inicia a iteração como \emph{false} para todos os índices. $N[k+p]$ e $N[k-p]$ serão \emph{true} desde que $k+p$ e $k-p$ pertençam ao intervalo $[0,L]$, respectivamente. Ao final da sequência, o maior valor que pode ser obtido é o maior valor de $k$ tal que $A[k]=\text{\emph{true}}$, $0 \le k \le L$ ou $-1$, caso $A[k]$ seja \emph{false} para todo $k$.
+
+\subsection{Paralelização do algoritmo de P.D. (\emph{solver\_dp\_p.c})}
+
+O algoritmo de programação dinâmica proposto na seção anterior apresenta oportunidades de paralelismo. Essas oportunidades se restringem a paralelismo de dados, visto que paralelismo de tarefas é inviável, devido à dependência de dados entre cada estágio do procedimento: para processar os valores obteníveis com a adição ou subtração de um item da sequência, é preciso ter terminado de processar os valores da fase anterior.
+
+O paralelismo de dados, nesse caso, é bastante simples, devido à forma como o algoritmo anterior foi implementado. Em particular, a representação do conjunto dos valores da etapa anterior como um vetor de valores booleanos permite paralelizar o processamento de cada etapa por blocagem: o vetor é dividido em $t$ (número de \emph{threads}) partes iguais, e cada \emph{thread} se torna responsável pelo processamento de uma parte. Essa paralelização também é realizável na etapa que zera o vetor dos valores do próximo estágio. Não é necessário fazer grandes modificações no funcionamento do algoritmo em si. Esclarecimentos sobre os detalhes de implementação estão disponíveis diretamente no código-fonte.
+
+\section{Análise de Complexidade Assintótica}
+
+Na análise de complexidade assintótica a seguir, três parâmetros serão usados: o número de itens na sequência ($n$), o número de núcleos disponíveis para processamento paralelo na máquina ($c$) e o limite máximo do jogo ($L$).
+
+\subsection{Força bruta (\emph{solver\_bf.c})}
+
+A abordagem de força bruta cria, potencialmente, duas chamadas recursivas para cada chamada de \emph{recursiveCall}, até que as chamadas alcancem o final da sequência. Isso significa que, no pior caso, esse algoritmo tem complexidade de tempo $O(2^n)$. A complexidade de espaço desse procedimento, por outro lado, é linear, visto que o número máximo de chamadas de \emph{recursiveCall} na pilha em um determinado momento é $n$.
+
+\subsection{Programação dinâmica (\emph{solver\_dp.c})}
+
+O algoritmo de programação dinâmica utilizado aloca vetores proporcionais ao limite máximo do jogo, com $L + 1$ elementos e não realiza chamadas recursivas. Dessa maneira, sua complexidade de espaço é $O(L)$. A função itera para cada item da sequência pelo vetor que representa o conjunto de valores do estágio anterior, de tamanho $L$ e, por isso, realiza $n \times L$ iterações, tendo, assim, complexidade assintótica de tempo $O(nL)$.
+
+\subsection{P.D. em paralelo (\emph{solver\_dp\_p.c})}
+
+Esse algoritmo é muito similar ao algoritmo regular de programação dinâmica, mas o processamento de cada etapa é dividido entre os $c$ núcleos disponíveis, desde que o número de threads seja definido apropriadamente. Ainda há, porém, um loop de $L$ iterações não-paralelizado ao final da função principal, cujo papel é descobrir o maior valor após a última etapa. Dessa maneira, a complexidade dessa versão do programa é $O(n \times \frac{L}{c} + L)$.
+
+\section{Análise experimental}
+
+
+
+\begin{itemize}
+    \item OS: Ubuntu 12.04 LTS x64;
+    \item CPU: Intel Core i7 2600 @ 3.40GHz;
+    \item RAM: 16GB.
+\end{itemize}
 
 \end{document}
