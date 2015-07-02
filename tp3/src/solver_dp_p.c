@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <stdio.h>
-#define NUM_THREADS 2
 
 /**
  * Struct used to pass parameters to the thread call. Begin and end define the
@@ -70,7 +69,7 @@ void *zeroPrev(void *args){
  *                   the limit, -1 is returned.
  */
 int findBestSolution(int *seq, int seq_len, int init_val, int limit_val){
-    pthread_t threads[NUM_THREADS];
+    pthread_t threads[num_threads];
     pthread_attr_t attr;
 
     pthread_attr_init(&attr);
@@ -84,37 +83,37 @@ int findBestSolution(int *seq, int seq_len, int init_val, int limit_val){
     prev[init_val] = true; // Seeds the procedure by defining the initial value
                            // as a valid state in the previous round.
 
-    struct args_next_state args[NUM_THREADS];
+    struct args_next_state args[num_threads];
     int i, j;
 
     // Sets each thread's static parameters, including their activity ranges
-    for (i = 0; i < NUM_THREADS; i++){
+    for (i = 0; i < num_threads; i++){
         args[i] = (struct args_next_state){
-            .begin = (i * limit_val / NUM_THREADS),
-            .end = ((i + 1) * limit_val / NUM_THREADS),
+            .begin = (i * limit_val / num_threads),
+            .end = ((i + 1) * limit_val / num_threads),
             .limit_val = limit_val
         };
     }
-    args[NUM_THREADS - 1].end++; // Game state arrays have size limit_val + 1
+    args[num_threads - 1].end++; // Game state arrays have size limit_val + 1
 
     // Iterates through the sequence of numbers
     for (i = 0; i < seq_len; i++){
-        for (j = 0; j < NUM_THREADS; j++){
+        for (j = 0; j < num_threads; j++){
             args[j].item = seq[i]; // Current item to be added or subtracted
             args[j].prev = prev; // Valid states for the previous round
             args[j].cur = cur; // Valid states for this round, to be found out
             pthread_create(&threads[j], &attr, processNextState, &args[j]);
         }
-        for (j = 0; j < NUM_THREADS; j++){
+        for (j = 0; j < num_threads; j++){
             pthread_join(threads[j], NULL);
         }
 
         // Zeroes the previous round, which is going to be swapped and become
         // the next round.
-        for (j = 0; j < NUM_THREADS; j++){
+        for (j = 0; j < num_threads; j++){
             pthread_create(&threads[j], &attr, zeroPrev, &args[j]);
         }
-        for (j = 0; j < NUM_THREADS; j++){
+        for (j = 0; j < num_threads; j++){
             pthread_join(threads[j], NULL);
         }
         bool *swap = cur;

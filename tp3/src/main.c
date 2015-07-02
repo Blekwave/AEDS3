@@ -2,12 +2,17 @@
 #include <stdlib.h>
 #include "solver.h"
 
+int num_threads = DEFAULT_NUM_THREADS;
+
 /**
  * The main function handles IO, calls the solver library and figures out
  * whether or not the player can win, based on the maximum valid amount of
  * points and on the win threshold.
  */
 int main(int argc, char const *argv[]){
+    if (argc == 2){
+        num_threads = atoi(argv[1]);
+    }
     int cases;
     scanf("%d", &cases);
     while (cases--){
