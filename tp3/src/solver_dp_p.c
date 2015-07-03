@@ -89,8 +89,8 @@ int findBestSolution(int *seq, int seq_len, int init_val, int limit_val){
     // Sets each thread's static parameters, including their activity ranges
     for (i = 0; i < num_threads; i++){
         args[i] = (struct args_next_state){
-            .begin = (i * limit_val / num_threads),
-            .end = ((i + 1) * limit_val / num_threads),
+            .begin = ((long long)i * limit_val / num_threads),
+            .end = ((long long)(i + 1) * limit_val / num_threads),
             .limit_val = limit_val
         };
     }

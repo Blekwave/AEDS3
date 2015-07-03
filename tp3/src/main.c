@@ -2,6 +2,12 @@
 #include <stdlib.h>
 #include "solver.h"
 
+#define MEASURE_EXECUTION_TIME_POSIX
+
+#ifdef MEASURE_EXECUTION_TIME_POSIX
+    #include <time.h>
+#endif
+
 int num_threads = DEFAULT_NUM_THREADS;
 
 /**
@@ -10,9 +16,15 @@ int num_threads = DEFAULT_NUM_THREADS;
  * points and on the win threshold.
  */
 int main(int argc, char const *argv[]){
+    #ifdef MEASURE_EXECUTION_TIME_POSIX
+        struct timespec begin, end;   
+        clock_gettime(CLOCK_MONOTONIC, &begin);
+    #endif
+
     if (argc == 2){
         num_threads = atoi(argv[1]);
     }
+
     int cases;
     scanf("%d", &cases);
     while (cases--){
@@ -32,5 +44,15 @@ int main(int argc, char const *argv[]){
         
         free(seq);
     }
+
+    #ifdef MEASURE_EXECUTION_TIME_POSIX
+        clock_gettime(CLOCK_MONOTONIC, &end);
+
+        double execution_time = (end.tv_sec - begin.tv_sec);
+        execution_time += (end.tv_nsec - begin.tv_nsec) / 1000000000.0;
+
+        fprintf(stderr, "%lf", execution_time);
+    #endif
+
     return 0;
 }
