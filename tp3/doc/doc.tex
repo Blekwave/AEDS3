@@ -4,6 +4,8 @@
 \usepackage{fullpage}
 \usepackage{graphicx}
 \usepackage{float}
+\floatstyle{boxed}
+\restylefloat{figure}
 \usepackage[portuguese]{babel}
 \usepackage[]{amsmath}
 \restylefloat{figure}
@@ -180,7 +182,12 @@ Os testes foram realizados no dia 2 de julho de 2015. A medição do tempo de ex
 
 O primeiro teste realizado pretende demonstrar o crescimento exponencial da versão de força bruta e compará-lo à versão de programação dinâmica, que cresce linearmente com o aumento do número de itens da sequência. Para isso, foi utilizado um caso de teste com uma sequência que nunca sai do intervalo $[0,L]$, garantindo que haja o máximo possível de chamadas recursivas na versão de força bruta. Além disso, para permitir a comparação das duas versões do programa, o limite superior $L$ foi calibrado para equalizar o tempo de execução do primeiro teste. Isso foi possível porque apenas a versão de programação dinâmica depende desse parâmetro. Os resultados estão disponíveis no gráfico abaixo.
 
-(gráfico)
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.90\textwidth]{graphics/exp1_bf.pdf}
+    \caption{Gráfico do tempo de execução dos testes (em segundos) em função do tamanho da sequência.}
+    \label{fig:experimento1}
+\end{figure}
 
 O teste se comportou exatamente como previsto. O aumento no número de itens provocou crescimento exponencial do tempo de execução da versão de força bruta do programa, mas apenas crescimento linear na versão de programação dinâmica.
 
@@ -188,7 +195,12 @@ O teste se comportou exatamente como previsto. O aumento no número de itens pro
 
 Este segundo teste demonstra o desempenho do programa em função do crescimento do número de \emph{threads} alocadas para a sua execução. É esperado que inicialmente haja melhora na performance com o aumento do número de \emph{threads}, mas que o tempo de execução eventualmente se estabilize e possivelmente comece a crescer. Isso ocorre devido aos ganhos marginais decrescentes de performance conforme cresce o número de \emph{threads} em relação à degradação causada pelos custos de comunicação e outras formas de \emph{overhead} associadas à criação excessiva de \emph{threads}. O gráfico a seguir contém os resultados do experimento.
 
-(gráfico)
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.90\textwidth]{graphics/exp2.pdf}
+    \caption{Gráfico do tempo de execução dos testes (em segundos) em função do número de threads utilizadas.}
+    \label{fig:experimento2}
+\end{figure}
 
 Como previsto, o tempo de execução do teste se estabilizou rapidamente na casa dos 4 segundos. Vale lembrar, porém, que o número ótimo de threads a ser utilizado depende da configuração do teste sendo realizado, do ambiente de execução, entre outros fatores. Nessa implementação, o paralelismo é utilizado para caminhar no vetor utilizado para representar os conjuntos de valores de cada estado do jogo. Portanto, se esses vetores fossem ainda maiores, é possível que aumentar ainda mais o número de threads utilizadas pudesse ser benéfico.
 
