@@ -21,6 +21,9 @@
 \begin{document}
 \maketitle
 \begin{center}
+
+(figura)
+
 Algoritmos e Estruturas de Dados III - 1º Semestre de 2015
 \end{center}
 
@@ -42,7 +45,7 @@ A saída do problema pede não só se é possível ou não vencer, mas também o
 
 \subsection{Força bruta (\emph{solver\_bf.c})}
 
-O algoritmo de força bruta para esse problema é bastante simples quando feito recursivamente. Partindo do valor inicial, o algoritmo tenta somar e subtrair o próximo valor da sequência ao montante. Caso o valor obtido nessas operações seja válido dentro do intervalo $[0,L]$, são realizadas novas chamadas recursivas com os novos valores como montantes que tentarão adicionar ou subtrair o próximo item da sequência. Caso alguma combinação de adições e subtrações alcance o final da sequência, o valor final é comparado com o melhor resultado obtido até então. É utilizada uma variável global auxiliar para armazenar o maior valor final obtido até o momento.
+O algoritmo de força bruta para esse problema é bastante simples quando feito recursivamente. Partindo do valor inicial, o algoritmo tenta somar e subtrair o próximo valor da sequência ao montante. Caso o valor obtido nessas operações seja válido dentro do intervalo $[0,L]$, são realizadas novas chamadas recursivas com os novos valores como montantes que tentarão adicionar ou subtrair o próximo item da sequência. Se alguma combinação de adições e subtrações for capaz de alcançar o final da sequência, o valor final é comparado com o melhor resultado obtido até então. É utilizada uma variável global auxiliar para armazenar o maior valor final obtido até o momento.
 
 \begin{function}[H]
     % \DontPrintSemicolon
@@ -95,7 +98,7 @@ Como mencionado, a chave para uma solução de programação dinâmica para esse
     \end{cases}
 \end{equation}
 
-A equação de recorrência acima representa o conjunto de resultados em cada estado do procedimento. O caso base da recorrência significa que, antes dos itens da sequência serem levados em consideração, o único valor válido é o valor inicial. A recorrência em si tenta somar ou subtrair o item da sequência aos valores válidos do estado anterior. O maior resultado possível no jogo após o estágio $i$ da sequência é simplesmente o maior valor de $V[i]$.
+A equação de recorrência acima representa o conjunto de resultados em cada estado do procedimento. O caso base da recorrência significa que, antes dos itens da sequência serem levados em consideração, o único valor válido é o valor inicial. A recorrência em si tenta somar ou subtrair o item da sequência aos valores válidos do estado anterior. O maior resultado possível no jogo após o estágio $i$ da sequência é o valor máximo presente em $V[i]$.
 
 \begin{algorithm}[H]
     % \DontPrintSemicolon
@@ -127,11 +130,17 @@ A equação de recorrência acima representa o conjunto de resultados em cada es
     }
 \end{algorithm}
 
-A implementação dos conjuntos do algoritmo acima foi feita através de dois vetores de valores booleanos de tamanho $L + 1$ (de $0$ a $L$): um para o estado anterior e outro para o novo estado (serão chamados de $A$ e $N$, respectivamente). Se $A[k]$ é \emph{true}, isso significa que $k$ é um valor que pode ser obtido com a adição ou subtração dos valores da sequência até o estado anterior sem sair do intervalo $[0,L]$ em momento algum. Portanto, o algoritmo se torna bastante simples: para cada item da sequência, itera-se por $A$. Para cada $A[k]$ com valor \emph{true}, o próximo item da sequência, $p$, é somado e subtraído a $k$. $N$ inicia a iteração como \emph{false} para todos os índices. $N[k+p]$ e $N[k-p]$ serão \emph{true} desde que $k+p$ e $k-p$ pertençam ao intervalo $[0,L]$, respectivamente. Ao final da sequência, o maior valor que pode ser obtido é o maior valor de $k$ tal que $A[k]=\text{\emph{true}}$, $0 \le k \le L$ ou $-1$, caso $A[k]$ seja \emph{false} para todo $k$.
+A implementação dos conjuntos do algoritmo acima foi feita através de dois vetores de valores booleanos de tamanho $L + 1$ (de $0$ a $L$): um para o estado anterior e outro para o novo estado (serão chamados de $A$ e $N$, respectivamente). Se $A[k]$ é \emph{true}, isso significa que $k$ é um valor que pode ser obtido com a adição ou subtração dos valores da sequência até o estado anterior sem sair do intervalo $[0,L]$ em momento algum. Portanto, o algoritmo se torna bastante simples: para cada item da sequência, itera-se por $A$.
+
+(figura)
+
+Para cada $A[k]$ com valor \emph{true}, o próximo item da sequência, $p$, é somado e subtraído a $k$. $N$ inicia a iteração como \emph{false} para todos os índices. $N[k+p]$ e $N[k-p]$ serão \emph{true} desde que $k+p$ e $k-p$ pertençam ao intervalo $[0,L]$, respectivamente. Ao final da sequência, o maior valor que pode ser obtido é o maior valor de $k$ tal que $A[k]=\text{\emph{true}}$, $0 \le k \le L$ ou $-1$, caso $A[k]$ seja \emph{false} para todo $k$.
 
 \subsection{Paralelização do algoritmo de P.D. (\emph{solver\_dp\_p.c})}
 
 O algoritmo de programação dinâmica proposto na seção anterior apresenta oportunidades de paralelismo. Essas oportunidades se restringem a paralelismo de dados, visto que paralelismo de tarefas é inviável, devido à dependência de dados entre cada estágio do procedimento: para processar os valores obteníveis com a adição ou subtração de um item da sequência, é preciso ter terminado de processar os valores da fase anterior.
+
+(figura)
 
 O paralelismo de dados, nesse caso, é bastante simples, devido à forma como o algoritmo anterior foi implementado. Em particular, a representação do conjunto dos valores da etapa anterior como um vetor de valores booleanos permite paralelizar o processamento de cada etapa por blocagem: o vetor é dividido em $t$ (número de \emph{threads}) partes iguais, e cada \emph{thread} se torna responsável pelo processamento de uma parte. Essa paralelização também é realizável na etapa que zera o vetor dos valores do próximo estágio. Não é necessário fazer grandes modificações no funcionamento do algoritmo em si. Esclarecimentos sobre os detalhes de implementação estão disponíveis diretamente no código-fonte.
 
@@ -149,11 +158,11 @@ O algoritmo de programação dinâmica utilizado aloca vetores proporcionais ao 
 
 \subsection{P.D. em paralelo (\emph{solver\_dp\_p.c})}
 
-Esse algoritmo é muito similar ao algoritmo regular de programação dinâmica, mas o processamento de cada etapa é dividido entre os $c$ núcleos disponíveis, desde que o número de threads seja definido apropriadamente. Ainda há, porém, um loop de $L$ iterações não-paralelizado ao final da função principal, cujo papel é descobrir o maior valor após a última etapa. Dessa maneira, a complexidade dessa versão do programa é $O(n \times \frac{L}{c} + L)$.
+Esse algoritmo é muito similar ao algoritmo regular de programação dinâmica, mas o processamento de cada etapa é dividido entre os $c$ núcleos disponíveis, desde que o número de \emph{threads} seja definido apropriadamente. Ainda há, porém, um loop de $L$ iterações não-paralelizado ao final da função principal, cujo papel é descobrir o maior valor após a última etapa. Dessa maneira, a complexidade dessa versão do programa é $O(n \times \frac{L}{c} + L)$. Sua complexidade de espaço continua sendo $O(L)$.
 
 \section{Análise experimental}
 
-Nessa seção, são realizados dois testes. O primeiro deles realiza uma comparação de desempenho entre as versões de força bruta e programação dinâmica, evidenciando a diferença entre a complexidade assintótica desses programas conforme cresce o tamanho da sequência. O segundo teste compara as versões sequencial e paralela do algoritmo de programação dinâmica em função do número de threads alocados para o programa.
+Nessa seção, são realizados dois testes. O primeiro deles realiza uma comparação de desempenho entre as versões de força bruta e programação dinâmica, evidenciando a diferença entre a complexidade assintótica desses programas conforme cresce o tamanho da sequência. O segundo teste compara a performance paralela do algoritmo de programação dinâmica em função do número de \emph{threads} alocadas para o programa.
 
 \subsection{Ambiente e metodologia}
 
@@ -169,10 +178,24 @@ Os testes foram realizados no dia 2 de julho de 2015. A medição do tempo de ex
 
 \subsection{Teste 1: força bruta vs. programação dinâmica}
 
+O primeiro teste realizado pretende demonstrar o crescimento exponencial da versão de força bruta e compará-lo à versão de programação dinâmica, que cresce linearmente com o aumento do número de itens da sequência. Para isso, foi utilizado um caso de teste com uma sequência que nunca sai do intervalo $[0,L]$, garantindo que haja o máximo possível de chamadas recursivas na versão de força bruta. Além disso, para permitir a comparação das duas versões do programa, o limite superior $L$ foi calibrado para equalizar o tempo de execução do primeiro teste. Isso foi possível porque apenas a versão de programação dinâmica depende desse parâmetro. Os resultados estão disponíveis no gráfico abaixo.
+
+(gráfico)
+
+O teste se comportou exatamente como previsto. O aumento no número de itens provocou crescimento exponencial do tempo de execução da versão de força bruta do programa, mas apenas crescimento linear na versão de programação dinâmica.
+
 \subsection{Teste 2: sequencial vs. paralelo}
+
+Este segundo teste demonstra o desempenho do programa em função do crescimento do número de \emph{threads} alocadas para a sua execução. É esperado que inicialmente haja melhora na performance com o aumento do número de \emph{threads}, mas que o tempo de execução eventualmente se estabilize e possivelmente comece a crescer. Isso ocorre devido aos ganhos marginais decrescentes de performance conforme cresce o número de \emph{threads} em relação à degradação causada pelos custos de comunicação e outras formas de \emph{overhead} associadas à criação excessiva de \emph{threads}. O gráfico a seguir contém os resultados do experimento.
+
+(gráfico)
+
+Como previsto, o tempo de execução do teste se estabilizou rapidamente na casa dos 4 segundos. Vale lembrar, porém, que o número ótimo de threads a ser utilizado depende da configuração do teste sendo realizado, do ambiente de execução, entre outros fatores. Nessa implementação, o paralelismo é utilizado para caminhar no vetor utilizado para representar os conjuntos de valores de cada estado do jogo. Portanto, se esses vetores fossem ainda maiores, é possível que aumentar ainda mais o número de threads utilizadas pudesse ser benéfico.
 
 \section{Conclusão}
 
-Nesse trabalho, foi solucionado um mesmo problema de diversas formas, de forma a relevar 
+Nesse trabalho, foi solucionado um mesmo problema de diversas formas, de forma a relevar as diferenças entre algoritmos de força bruta e métodos mais especializados para o problema em questão. Além disso, utilizou-se paralelismo para obter ganhos de performance de quase $400\%$. O desempenho de cada versão do programa teve sua performance analisada assintoticamente e a análise realizada foi comprovada através de baterias de testes.
+
+Há várias maneiras de melhorar ainda mais esse programa. A mais notável seria implementar uma representação para os conjuntos na solução de programação dinâmica que independesse do limite superior do jogo. Isso pode ser conveniente em situações nas quais o limite superior possa tomar valores muito grandes ou indefinidos, ou em casos em que os valores da sequência sejam números reais, o que inviabilizaria a representação utilizada. Dentro dos limites propostos para esse trabalho, porém, a implementação realizada é boa o bastante.
 
 \end{document}
