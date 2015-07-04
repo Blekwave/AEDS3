@@ -43,5 +43,8 @@ int findBestSolution(int *seq, int seq_len, int init_val, int limit_val){
             cur[j] = false;
     }
     for (i = limit_val; i >= 0 && !prev[i]; i--);
+
+    free(prev);
+    free(cur);
     return i;
 }

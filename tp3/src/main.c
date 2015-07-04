@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "solver.h"
 
-#define MEASURE_EXECUTION_TIME_POSIX
+// #define MEASURE_EXECUTION_TIME_POSIX
 
 #ifdef MEASURE_EXECUTION_TIME_POSIX
     #include <time.h>

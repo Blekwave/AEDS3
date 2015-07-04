@@ -4,14 +4,16 @@
 \usepackage{fullpage}
 \usepackage{graphicx}
 \usepackage{float}
-\floatstyle{boxed}
-\restylefloat{figure}
+% \floatstyle{boxed}
+% \restylefloat{figure}
 \usepackage[portuguese]{babel}
 \usepackage[]{amsmath}
 \restylefloat{figure}
 
 \usepackage[adobe-utopia]{mathdesign}
 \usepackage[T1]{fontenc}
+
+\usepackage{mdframed}
 
 \DeclareGraphicsExtensions{.jpg,.pdf}
 
@@ -23,11 +25,14 @@
 \begin{document}
 \maketitle
 \begin{center}
-
-(figura)
-
 Algoritmos e Estruturas de Dados III - 1º Semestre de 2015
 \end{center}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.90\textwidth]{graphics/cover.pdf}
+    \label{fig:cover}
+\end{figure}
 
 \section{Introdução}
 
@@ -40,8 +45,6 @@ São propostos três algoritmos, com desempenhos crescentes. Inicialmente, é ut
 \section{Resolução do problema}
 
 O problema do trabalho envolve a otimização das jogadas de um jogo de azar, no qual o jogador recebe uma sequência $S$ de $n$ números inteiros, um valor inicial $I$, um limite $L$ e um patamar de vitória $V$. Esse jogador tem acesso a todos esses valores e deve decidir entre jogar ou não jogar nessa rodada. Caso ele escolha jogar, ele deve seguir a sequência na ordem apresentada, e, para cada número, escolher somá-lo ou subtraí-lo ao valor atual. Se esse valor ultrapassar, a qualquer momento, o limite, ou descer abaixo de zero, o jogador perde imediatamente. Ao final da sequência, se o valor obtido for maior ou igual ao patamar de vitória, o jogador vence. É preciso, portanto, obter a combinação de adições e subtrações que maximiza o valor final a ser obtido. É possível que não haja combinações que permitam a vitória, devido à configuração da entrada.
-
-(ilustração do jogo)
 
 A saída do problema pede não só se é possível ou não vencer, mas também o maior valor que pode ser obtido, independentemente do resultado do jogo. No caso, apenas valores obtidos ao final da sequência se aplicam. Se não é possível chegar ao final da sequência em uma certa configuração, o programa deve imprimir $-1$ como o valor obtido.
 
@@ -134,7 +137,12 @@ A equação de recorrência acima representa o conjunto de resultados em cada es
 
 A implementação dos conjuntos do algoritmo acima foi feita através de dois vetores de valores booleanos de tamanho $L + 1$ (de $0$ a $L$): um para o estado anterior e outro para o novo estado (serão chamados de $A$ e $N$, respectivamente). Se $A[k]$ é \emph{true}, isso significa que $k$ é um valor que pode ser obtido com a adição ou subtração dos valores da sequência até o estado anterior sem sair do intervalo $[0,L]$ em momento algum. Portanto, o algoritmo se torna bastante simples: para cada item da sequência, itera-se por $A$.
 
-(figura)
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.90\textwidth]{graphics/dp.pdf}
+    \caption{Demonstração dos estágios do algoritmo de programação dinâmica.}
+    \label{fig:dp}
+\end{figure}
 
 Para cada $A[k]$ com valor \emph{true}, o próximo item da sequência, $p$, é somado e subtraído a $k$. $N$ inicia a iteração como \emph{false} para todos os índices. $N[k+p]$ e $N[k-p]$ serão \emph{true} desde que $k+p$ e $k-p$ pertençam ao intervalo $[0,L]$, respectivamente. Ao final da sequência, o maior valor que pode ser obtido é o maior valor de $k$ tal que $A[k]=\text{\emph{true}}$, $0 \le k \le L$ ou $-1$, caso $A[k]$ seja \emph{false} para todo $k$.
 
@@ -142,7 +150,12 @@ Para cada $A[k]$ com valor \emph{true}, o próximo item da sequência, $p$, é s
 
 O algoritmo de programação dinâmica proposto na seção anterior apresenta oportunidades de paralelismo. Essas oportunidades se restringem a paralelismo de dados, visto que paralelismo de tarefas é inviável, devido à dependência de dados entre cada estágio do procedimento: para processar os valores obteníveis com a adição ou subtração de um item da sequência, é preciso ter terminado de processar os valores da fase anterior.
 
-(figura)
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.90\textwidth]{graphics/parallel.pdf}
+    \caption{Demonstração dos estágios do algoritmo de programação dinâmica com paralelismo (exemplo para 4 threads).}
+    \label{fig:parallel}
+\end{figure}
 
 O paralelismo de dados, nesse caso, é bastante simples, devido à forma como o algoritmo anterior foi implementado. Em particular, a representação do conjunto dos valores da etapa anterior como um vetor de valores booleanos permite paralelizar o processamento de cada etapa por blocagem: o vetor é dividido em $t$ (número de \emph{threads}) partes iguais, e cada \emph{thread} se torna responsável pelo processamento de uma parte. Essa paralelização também é realizável na etapa que zera o vetor dos valores do próximo estágio. Não é necessário fazer grandes modificações no funcionamento do algoritmo em si. Esclarecimentos sobre os detalhes de implementação estão disponíveis diretamente no código-fonte.
 
@@ -183,10 +196,12 @@ Os testes foram realizados no dia 2 de julho de 2015. A medição do tempo de ex
 O primeiro teste realizado pretende demonstrar o crescimento exponencial da versão de força bruta e compará-lo à versão de programação dinâmica, que cresce linearmente com o aumento do número de itens da sequência. Para isso, foi utilizado um caso de teste com uma sequência que nunca sai do intervalo $[0,L]$, garantindo que haja o máximo possível de chamadas recursivas na versão de força bruta. Além disso, para permitir a comparação das duas versões do programa, o limite superior $L$ foi calibrado para equalizar o tempo de execução do primeiro teste. Isso foi possível porque apenas a versão de programação dinâmica depende desse parâmetro. Os resultados estão disponíveis no gráfico abaixo.
 
 \begin{figure}[H]
+\begin{mdframed}
     \centering
     \includegraphics[width=0.90\textwidth]{graphics/exp1_bf.pdf}
-    \caption{Gráfico do tempo de execução dos testes (em segundos) em função do tamanho da sequência.}
+    \caption{Gráfico do tempo médio de execução dos testes (em segundos) em função do tamanho da sequência.}
     \label{fig:experimento1}
+\end{mdframed}
 \end{figure}
 
 O teste se comportou exatamente como previsto. O aumento no número de itens provocou crescimento exponencial do tempo de execução da versão de força bruta do programa, mas apenas crescimento linear na versão de programação dinâmica.
@@ -196,13 +211,24 @@ O teste se comportou exatamente como previsto. O aumento no número de itens pro
 Este segundo teste demonstra o desempenho do programa em função do crescimento do número de \emph{threads} alocadas para a sua execução. É esperado que inicialmente haja melhora na performance com o aumento do número de \emph{threads}, mas que o tempo de execução eventualmente se estabilize e possivelmente comece a crescer. Isso ocorre devido aos ganhos marginais decrescentes de performance conforme cresce o número de \emph{threads} em relação à degradação causada pelos custos de comunicação e outras formas de \emph{overhead} associadas à criação excessiva de \emph{threads}. O gráfico a seguir contém os resultados do experimento.
 
 \begin{figure}[H]
+\begin{mdframed}
     \centering
     \includegraphics[width=0.90\textwidth]{graphics/exp2.pdf}
-    \caption{Gráfico do tempo de execução dos testes (em segundos) em função do número de threads utilizadas.}
+    \caption{Gráfico do tempo médio de execução dos testes (em segundos) em função do número de threads utilizadas.}
     \label{fig:experimento2}
+\end{mdframed}
 \end{figure}
 
-Como previsto, o tempo de execução do teste se estabilizou rapidamente na casa dos 4 segundos. Vale lembrar, porém, que o número ótimo de threads a ser utilizado depende da configuração do teste sendo realizado, do ambiente de execução, entre outros fatores. Nessa implementação, o paralelismo é utilizado para caminhar no vetor utilizado para representar os conjuntos de valores de cada estado do jogo. Portanto, se esses vetores fossem ainda maiores, é possível que aumentar ainda mais o número de threads utilizadas pudesse ser benéfico.
+Como previsto, o tempo de execução do teste se estabilizou rapidamente na casa dos 4 segundos, havendo, assim, um speedup aproximado de (levando em consideração o tempo de execução médio dos casos de 1 e 32 threads):
+
+\[
+    S = \frac{T_1}{T_32} = \frac{21,16}{4,30} = 4,92
+\]
+
+Vale lembrar, porém, que o número ótimo de threads a ser utilizado depende da configuração do teste sendo realizado, do ambiente de execução, entre outros fatores. Nessa implementação, o paralelismo é utilizado para caminhar no vetor utilizado para representar os conjuntos de valores de cada estado do jogo. Portanto, se esses vetores fossem ainda maiores, é possível que aumentar ainda mais o número de threads utilizadas pudesse ser benéfico.
+
+Além disso, com esses dados, é possível analisar o speedup do programa 
+
 
 \section{Conclusão}
 
